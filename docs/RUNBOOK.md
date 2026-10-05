@@ -124,7 +124,10 @@ The GitHub repo `insight-option/oneq-mobile-app` is connected to the Amplify app
 
 - **backend** phase: `npm ci --legacy-peer-deps` (the lock file is generated with `legacy-peer-deps=true` from
   `.npmrc`; without it `npm ci` fails with "Missing … from lock file" because peer dependencies such as
-  `@aws-sdk/client-dynamodb` and `@aws-cdk/cli-plugin-contract` are intentionally not installed) and then
+  `@aws-sdk/client-dynamodb` and `@aws-cdk/cli-plugin-contract` are intentionally not installed). After any
+  `npm install` / `npx expo install`, run `npm run lock:check` before pushing — npm has dropped nested exact-pinned
+  entries from the lock more than once, which only fails in CI; `npm install --package-lock-only --legacy-peer-deps`
+  repairs it — and then
   `npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID`. The app's service role must carry the
   `AmplifyBackendDeployFullAccess` policy (Amplify console → App settings → IAM roles); the first build also
   bootstraps CDK in the account.

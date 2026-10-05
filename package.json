@@ -77,7 +77,8 @@
     "typecheck": "tsc --noEmit",
     "prebuild": "expo prebuild --clean",
     "sandbox": "ampx sandbox",
-    "sandbox:once": "ampx sandbox --once"
+    "sandbox:once": "ampx sandbox --once",
+    "lock:check": "node scripts/check-lock.mjs"
   },
   "private": true
 }
