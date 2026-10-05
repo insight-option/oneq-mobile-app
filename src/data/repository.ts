@@ -55,6 +55,8 @@ export interface AuthService {
   confirmOtp(code: string): Promise<AuthNextStep>;
   resendOtp(): Promise<void>;
   signInWithEmail(email: string, password: string): Promise<AuthNextStep>;
+  /** Finish a sign-in that returned NEW_PASSWORD (temporary password → permanent one). */
+  completeNewPassword(newPassword: string): Promise<AuthNextStep>;
   signUpWithEmail(input: { email: string; password: string; name: string; phone: string }): Promise<AuthNextStep>;
   requestPasswordReset(email: string): Promise<AuthNextStep>;
   confirmPasswordReset(input: { email: string; code: string; newPassword: string }): Promise<void>;

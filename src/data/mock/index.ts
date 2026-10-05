@@ -325,6 +325,10 @@ export const createMockRepository = (): OneQRepository => {
         authEmitter.emit(session);
         return { step: 'DONE', session };
       },
+      async completeNewPassword() {
+        // demo accounts never hold a temporary password
+        throw new Error('UNSUPPORTED_STEP_NEW_PASSWORD');
+      },
       async signUpWithEmail({ email, password, name, phone: phoneInput }) {
         await delay();
         const phone = normalizeQatarPhone(phoneInput);

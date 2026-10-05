@@ -667,8 +667,14 @@ export const createAmplifyRepository = (): OneQRepository => {
         const { nextStep } = await signIn({ username: email.trim().toLowerCase(), password });
         if (nextStep.signInStep === 'DONE') return { step: 'DONE', session: await finishSignIn() };
         if (nextStep.signInStep === 'CONFIRM_SIGN_UP') throw new Error('USER_NOT_CONFIRMED');
-        if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') throw new Error('NEW_PASSWORD_REQUIRED');
+        // users created in the Cognito console / with AdminCreateUser hold a temporary password until they set their own
+        if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') return { step: 'NEW_PASSWORD', destination: email.trim().toLowerCase() };
         if (nextStep.signInStep === 'RESET_PASSWORD') throw new Error('RESET_PASSWORD');
+        throw new Error(`UNSUPPORTED_STEP_${nextStep.signInStep}`);
+      },
+      async completeNewPassword(newPassword) {
+        const { nextStep } = await confirmSignIn({ challengeResponse: newPassword });
+        if (nextStep.signInStep === 'DONE') return { step: 'DONE', session: await finishSignIn() };
         throw new Error(`UNSUPPORTED_STEP_${nextStep.signInStep}`);
       },
       async signUpWithEmail({ email, password, name, phone: phoneInput }) {

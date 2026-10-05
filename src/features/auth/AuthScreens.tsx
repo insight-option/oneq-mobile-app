@@ -222,7 +222,9 @@ export const EmailScreen = () => {
       return;
     }
     const step = await signInEmail(email, password);
-    if (step) land(step);
+    if (!step) return;
+    if (step.step === 'NEW_PASSWORD') router.push({ pathname: '/(auth)/new-password', params: { email: step.destination } });
+    else land(step);
   };
   const submitPhone = async () => {
     const step = await phoneFlow.startPhone(digits);
@@ -352,6 +354,57 @@ export const SignupScreen = () => {
 };
 
 /* ---------- Forgot password ---------- */
+/** Reached when sign-in returns NEW_PASSWORD: the account still holds the temporary password it was created with. */
+export const NewPasswordScreen = () => {
+  const router = useRouter();
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { t } = useI18n();
+  const { colors, spacing } = useTheme();
+  const { loading, completeNewPassword, land } = useAuthFlow();
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+
+  const submit = async () => {
+    if (password.length < 8) {
+      toast.error(t('auth.errors.weakPassword'));
+      return;
+    }
+    if (password !== confirm) {
+      toast.error(t('auth.newPassword.mismatch'));
+      return;
+    }
+    const step = await completeNewPassword(password);
+    if (step) land(step);
+  };
+
+  return (
+    <Screen mode="scroll" edges={[]} keyboard background={colors.canvas}>
+      <Header title={t('auth.newPassword.title')} variant="maroon" compact />
+      <View style={[styles.form, { padding: spacing.xxl, gap: spacing.lg }]}>
+        <View style={{ alignItems: 'center', gap: spacing.md, marginTop: spacing.lg }}>
+          <IconBubble name="key-round" size={88} iconSize={40} />
+          <Text variant="bodySm" muted align="center">
+            {t('auth.newPassword.subtitle')}
+          </Text>
+          {email ? (
+            <Text variant="caption" muted numeric>
+              {email}
+            </Text>
+          ) : null}
+        </View>
+        <Input label={t('auth.newPassword.label')} value={password} onChangeText={setPassword} leftIcon="lock" secureTextEntry secureToggle ltr autoFocus />
+        <Input label={t('auth.newPassword.confirmLabel')} value={confirm} onChangeText={setConfirm} leftIcon="lock" secureTextEntry secureToggle ltr onSubmitEditing={submit} />
+        <Button label={t('auth.newPassword.submit')} size="lg" fullWidth loading={loading} onPress={submit} />
+        <Pressable onPress={() => router.replace('/(auth)/email')} hitSlop={8} style={{ alignSelf: 'center' }}>
+          <Text variant="bodySm" weight="semibold" color={colors.primary}>
+            {t('auth.forgot.backToLogin')}
+          </Text>
+        </Pressable>
+      </View>
+    </Screen>
+  );
+};
+
 export const ForgotScreen = () => {
   const router = useRouter();
   const { t } = useI18n();

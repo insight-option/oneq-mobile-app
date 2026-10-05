@@ -585,7 +585,9 @@ export type AuthNextStep =
   | { step: 'OTP'; destination: string }
   | { step: 'SIGN_UP'; phone: string }
   | { step: 'DONE'; session: SessionInfo }
-  | { step: 'RESET_CODE'; destination: string };
+  | { step: 'RESET_CODE'; destination: string }
+  /** account created with a temporary password (Cognito admin-created users): a permanent one must be set first */
+  | { step: 'NEW_PASSWORD'; destination: string };
 
 export interface UpsertServiceInput extends Omit<Service, 'id' | 'companyId' | 'createdAt' | 'updatedAt' | 'bookingCount' | 'isOffer'> {
   id?: string;

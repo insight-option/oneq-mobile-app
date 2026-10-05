@@ -79,6 +79,8 @@ export const useAuthFlow = () => {
 
   const signInEmail = useCallback((email: string, password: string) => run(() => repo.auth.signInWithEmail(email.trim(), password)), [run]);
 
+  const completeNewPassword = useCallback((newPassword: string) => run(() => repo.auth.completeNewPassword(newPassword)), [run]);
+
   const signUpEmail = useCallback((input: { email: string; password: string; name: string; phone: string }) => run(() => repo.auth.signUpWithEmail(input)), [run]);
 
   const requestReset = useCallback((email: string) => run(() => repo.auth.requestPasswordReset(email.trim())), [run]);
@@ -97,5 +99,5 @@ export const useAuthFlow = () => {
     [router],
   );
 
-  return { loading, startPhone, signUpPhone, confirmOtp, resend, signInEmail, signUpEmail, requestReset, confirmReset, land };
+  return { loading, startPhone, signUpPhone, confirmOtp, resend, signInEmail, completeNewPassword, signUpEmail, requestReset, confirmReset, land };
 };
