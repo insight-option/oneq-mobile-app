@@ -49,6 +49,14 @@ The preference survives `adb install -r`; a full uninstall clears it.
   `EXPO_PUBLIC_DATA_MODE=mock` bakes mock mode into every bundle it starts; the active mode is shown in
   Profile → Settings (data mode row).
 
+### First-launch direction (native RTL)
+
+React Native stores the layout direction natively and applies a change only on the next process start, so an
+Arabic-first app would render its very first launch left-to-right. `plugins/withNativeRtl.js` (registered in
+`app.json`) enables RTL in `MainApplication.kt` / `AppDelegate.swift` before React starts — only while no preference
+has been persisted yet — so the language switch in the app keeps control afterwards. Re-run `npx expo prebuild` after
+changing it; verified by `adb shell pm clear com.mastajazz.oneQapp` + a fresh launch of the release APK.
+
 ### Google Maps on Android
 
 The Android Maps SDK aborts the whole app when the manifest has no API key, so `app.config.js` always injects one

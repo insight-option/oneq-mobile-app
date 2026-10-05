@@ -50,6 +50,7 @@
       "typedRoutes": true
     },
     "plugins": [
+      "./plugins/withNativeRtl",
       "expo-router",
       "expo-status-bar",
       "expo-image",
