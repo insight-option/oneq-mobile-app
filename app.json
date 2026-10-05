@@ -39,7 +39,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "single",
+      "lang": "ar",
+      "themeColor": "#5A0020",
+      "backgroundColor": "#5A0020",
+      "description": "OneQ — منصة الخدمات الأولى في قطر"
     },
     "experiments": {
       "typedRoutes": true
@@ -108,6 +113,11 @@
           "cameraPermission": "يحتاج OneQ الكاميرا لالتقاط الصور. OneQ needs the camera to take pictures."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d5503d5b-5dca-458b-9b21-72b2e99c2b54"
+      }
+    }
   }
 }

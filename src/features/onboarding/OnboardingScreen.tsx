@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, I18nManager, Pressable, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { I18nManager, Pressable, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { appWidth } from '@/lib/layout';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
@@ -9,7 +10,7 @@ import { useI18n } from '@/i18n';
 import { brand } from '@/theme/tokens';
 import { continueAsGuest, markOnboarded } from '@/features/shell/useBootstrap';
 
-const { width: W } = Dimensions.get('window');
+const W = appWidth();
 
 const FloatingCard = ({ children, rotate, offset, delay, style }: { children: React.ReactNode; rotate: string; offset: number; delay: number; style?: object }) => {
   const y = useSharedValue(0);

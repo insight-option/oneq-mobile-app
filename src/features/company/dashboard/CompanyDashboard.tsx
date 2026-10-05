@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   quickRow: { flexDirection: 'row', gap: 10 },
   quick: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderWidth: StyleSheet.hairlineWidth },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  half: { width: '47.5%', flex: undefined },
+  half: { width: '47.5%', flexGrow: 0, flexShrink: 0, flexBasis: '47.5%' }, // explicit components: CSS `flex: 0` would mean basis 0% on web, `flex: undefined` does not override on web
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   insight: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
 });

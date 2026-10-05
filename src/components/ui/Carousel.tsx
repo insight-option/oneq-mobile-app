@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { I18nManager, Platform, ScrollView, StyleSheet, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { I18nManager, Platform, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { useAppWidth } from '@/lib/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 
 export interface CarouselProps<T> {
@@ -23,7 +24,7 @@ const PHYSICAL_RTL_OFFSETS = Platform.OS === 'android';
 /** Paged hero carousel. Renders every slide (no virtualization: a handful of slides) so RTL paging never leaves gaps. */
 export function Carousel<T>({ data, renderItem, keyExtractor, height, autoPlayMs = 4200, gutter = 16, showDots = true, dotsLight }: CarouselProps<T>) {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
+  const width = useAppWidth();
   const ref = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
   const indexRef = useRef(0);

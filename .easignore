@@ -1,0 +1,29 @@
+# What EAS Build uploads (mirrors .gitignore, except that amplify_outputs.json MUST ship: the app reads the backend
+# endpoints from it at bundle time). Replace that file with the production branch's outputs before a release build.
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+.env*.local
+*.tsbuildinfo
+/ios
+/android
+.amplify
+amplifyconfiguration*
+.env
+.npm
+docs/reference

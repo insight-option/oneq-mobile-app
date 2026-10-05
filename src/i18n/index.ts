@@ -4,7 +4,8 @@
  *   t('booking.plan.weeks', { n: 12 })
  */
 import { useCallback, useMemo } from 'react';
-import { DevSettings, I18nManager } from 'react-native';
+import { DevSettings, I18nManager, Platform } from 'react-native';
+import { isRTL as layoutIsRTL } from '@/lib/rtl';
 import type { Lang, LocalizedText } from '@/domain/types';
 import { useLocaleStore } from '@/store/locale';
 import { ar, type TKey } from './ar';
@@ -72,6 +73,12 @@ export const localized = (text: LocalizedText | string | null | undefined, fallb
 export const setLanguage = async (lang: Lang): Promise<boolean> => {
   await useLocaleStore.getState().setLang(lang);
   const shouldBeRTL = lang === 'ar';
+  if (Platform.OS === 'web') {
+    // react-native-web cannot flip the direction at runtime: it is read from storage on the next load (src/lib/rtl.ts)
+    if (layoutIsRTL === shouldBeRTL) return false;
+    globalThis.location?.reload();
+    return true;
+  }
   if (I18nManager.isRTL === shouldBeRTL) return false;
   I18nManager.allowRTL(shouldBeRTL);
   I18nManager.forceRTL(shouldBeRTL);
@@ -97,7 +104,7 @@ export const reloadApp = async (): Promise<void> => {
 
 export const useI18n = () => {
   const lang = useLocaleStore((s) => s.lang);
-  const isRTL = I18nManager.isRTL;
+  const isRTL = layoutIsRTL;
   const tr = useCallback((key: TKey, params?: Params) => tFor(lang, key, params), [lang]);
   const loc = useCallback((text: LocalizedText | string | null | undefined, fallback = '') => localizedFor(lang, text, fallback), [lang]);
   return useMemo(

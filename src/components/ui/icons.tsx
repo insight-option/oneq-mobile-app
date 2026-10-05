@@ -3,7 +3,7 @@
  * Usage: <Icon name="house" size={22} color={colors.primary} />
  */
 import React from 'react';
-import { I18nManager } from 'react-native';
+import { isRTL } from '@/lib/rtl';
 import type { LucideProps } from 'lucide-react-native';
 import Activity from 'lucide-react-native/icons/activity';
 import Apple from 'lucide-react-native/icons/apple';
@@ -353,7 +353,7 @@ export const isIconName = (name: string): name is IconName => name in ICONS;
 
 export const Icon = React.memo(function Icon({ name, size = 22, color = '#231A18', strokeWidth = 1.8, rtlAware = true, style }: IconProps) {
   let resolved: IconName = isIconName(name) ? name : 'circle-help';
-  if (rtlAware && I18nManager.isRTL && DIRECTIONAL[resolved]) resolved = DIRECTIONAL[resolved] as IconName;
+  if (rtlAware && isRTL && DIRECTIONAL[resolved]) resolved = DIRECTIONAL[resolved] as IconName;
   const Cmp = ICONS[resolved] as LucideComponent;
   return <Cmp size={size} color={color} strokeWidth={strokeWidth} style={style} />;
 });

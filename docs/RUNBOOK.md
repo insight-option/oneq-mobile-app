@@ -120,8 +120,21 @@ The GitHub repo `insight-option/oneq-mobile-app` is connected to the Amplify app
   `npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID`. The app's service role must carry the
   `AmplifyBackendDeployFullAccess` policy (Amplify console → App settings → IAM roles); the first build also
   bootstraps CDK in the account.
-- **frontend** phase: there is no web build of the mobile app, so the artifact served on `oneq.qa` is the static
-  landing page in `web/` (plus `assets/brand/logo.png`). Replace `web/index.html` when a real website exists.
+- **frontend** phase: `npx expo export --platform web` — the same app compiled for the browser (Expo Router,
+  `web.output: single`) and served on `oneq.qa`, baked with the branch's `amplify_outputs.json`. Because it is a
+  single-page app, the hosting app needs one rewrite rule (Amplify console → Hosting → Rewrites and redirects):
+  source `</^[^.]+$|\.(?!(css|gif|ico|jpg|jpeg|js|json|png|svg|txt|ttf|woff|woff2|map|webp)$)([^.]+$)/>`,
+  target `/index.html`, type `200 (Rewrite)` — otherwise deep links such as `/company/<id>` return 404 on reload.
+
+### 3.5 Web build notes
+
+The browser build renders the phone layout in a centred 480 px column (`src/app/_layout.tsx`, `src/lib/layout.ts`).
+Platform-specific files replace the native-only modules: `MapScreen.web.tsx` and `LocationPicker.web.tsx` use an
+OpenStreetMap embed instead of react-native-maps, `notifications.web.ts` turns push into no-ops (in-app notifications
+still arrive through the API subscriptions). RTL on web comes from `src/lib/rtl.ts` (react-native-web's I18nManager is
+a stub): the persisted language sets `<html dir>` plus the root `View`'s `dir`, and switching the language reloads the
+page. Brand fonts are loaded through `src/lib/webFonts.ts` (the expo-font plugin only embeds them natively).
+Local check: `npx expo export --platform web --output-dir dist` then serve `dist/` (or `npx expo start --web`).
 
 After the first successful build, from a machine with credentials for the **production** account:
 
@@ -141,15 +154,30 @@ every user). GSI changes recreate tables in the sandbox — seed again afterward
 attribute schema with explicit `attributeDataType`s: without them CloudFormation fails every later user-pool update
 with "Invalid AttributeDataType input" (hit once during development; the sandbox was recreated).
 
-## 4. Release builds
+## 4. Release builds (EAS)
+
+`eas.json` defines three profiles: `development` (dev client APK), `preview` (installable APK, internal distribution)
+and `production` (Play Store AAB, auto-incremented version). The Expo project id lives in `app.json`
+(`extra.eas.projectId`); log in with the Expo account that owns that project first (`npx eas-cli@latest login`, or set
+`EXPO_TOKEN` from expo.dev → Account settings → Access tokens for non-interactive use).
 
 ```powershell
-npx eas-cli build --platform android --profile production   # or: cd android; .\gradlew.bat bundleRelease
-npx eas-cli build --platform ios --profile production
+npx eas-cli@latest build --platform android --profile preview       # APK for phones/testers
+npx eas-cli@latest build --platform android --profile production    # AAB for Google Play
+npx eas-cli@latest build --platform ios --profile production        # needs an Apple Developer account (interactive)
+npx eas-cli@latest submit --platform android --profile production   # after the Play Console app exists
 ```
 
-Keep `amplify_outputs.json`, `GOOGLE_MAPS_ANDROID_API_KEY` and `EAS_PROJECT_ID` available to the build (EAS environment
-variables or a non-ignored `.easignore`).
+What the build uploads is governed by `.easignore` (mirror of `.gitignore` except `amplify_outputs.json`, which must
+ship because the app reads its backend endpoints from it): put the **production branch's** outputs in the project root
+before a release build (Amplify console → app → `main` → *Deployed backend resources* → *Download amplify_outputs.json*,
+or `npx ampx generate outputs --branch main --app-id d3rw7vgtsyn0ne --profile <prod>`). Android native projects are
+generated on EAS from `app.config.js` (`android/` is not uploaded), so `GOOGLE_MAPS_ANDROID_API_KEY` must be an EAS
+environment variable (`eas env:create --scope project --name GOOGLE_MAPS_ANDROID_API_KEY --value …`) to get real map
+tiles. Push notifications additionally need the FCM V1 service account uploaded with `eas credentials`.
+
+Local alternative without EAS (debug-signed, for testing only):
+`cd android; .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a` → `android/app/build/outputs/apk/release/app-release.apk`.
 
 ## 5. Known limits / hardening backlog
 

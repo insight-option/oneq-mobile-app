@@ -3,12 +3,11 @@
  * Changing the language flips RTL natively and reloads the app (see src/i18n/index.ts → setLanguage).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { I18nManager } from 'react-native';
 import { create } from 'zustand';
 import type { Lang } from '@/domain/types';
+import { DEFAULT_LANG, isRTL, LOCALE_STORAGE_KEY } from '@/lib/rtl';
 
-export const LOCALE_STORAGE_KEY = 'oneq.lang.v1';
-export const DEFAULT_LANG: Lang = 'ar';
+export { DEFAULT_LANG, LOCALE_STORAGE_KEY };
 
 interface LocaleState {
   lang: Lang;
@@ -22,13 +21,13 @@ interface LocaleState {
 
 export const useLocaleStore = create<LocaleState>((set, get) => ({
   lang: DEFAULT_LANG,
-  isRTL: I18nManager.isRTL,
+  isRTL,
   hydrated: false,
   hydrate: async () => {
     try {
       const saved = (await AsyncStorage.getItem(LOCALE_STORAGE_KEY)) as Lang | null;
       const lang: Lang = saved === 'en' || saved === 'ar' ? saved : DEFAULT_LANG;
-      set({ lang, isRTL: I18nManager.isRTL, hydrated: true });
+      set({ lang, isRTL, hydrated: true });
       return lang;
     } catch {
       set({ hydrated: true });

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
+import { appWidth } from '@/lib/layout';
 import { Image } from 'expo-image';
 import { SplashScreen, useRouter } from 'expo-router';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
@@ -10,7 +11,8 @@ import { useSessionStore } from '@/store/session';
 import { brand } from '@/theme/tokens';
 import { BootGlyph } from './BootGlyph';
 
-const { width: W, height: H } = Dimensions.get('window');
+const W = appWidth();
+const H = Dimensions.get('window').height;
 const MIN_MS = 1400;
 
 const Ring = ({ size, delay, opacity }: { size: number; delay: number; opacity: number }) => {

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions, FlatList, Linking, Pressable, ScrollView, Share, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { FlatList, Linking, Pressable, ScrollView, Share, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { appWidth } from '@/lib/layout';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,7 +16,7 @@ import { requireAuth } from '@/store/session';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useCompanyActions } from '../catalog/useCatalogHelpers';
 
-const { width: W } = Dimensions.get('window');
+const W = appWidth();
 const COVER_H = 300;
 
 export const CompanyScreen = () => {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { I18nManager, Text as RNText, StyleSheet, type StyleProp, type TextProps as RNTextProps, type TextStyle } from 'react-native';
+import { Text as RNText, StyleSheet, type StyleProp, type TextProps as RNTextProps, type TextStyle } from 'react-native';
+import { isRTL } from '@/lib/rtl';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { FontWeight, Palette, TextVariant } from '@/theme/tokens';
 import { textStyle } from '@/theme/typography';
@@ -19,8 +20,8 @@ export interface TextProps extends RNTextProps {
 }
 
 const alignMap = (align: 'start' | 'center' | 'end' | undefined): TextStyle['textAlign'] => {
-  if (!align || align === 'start') return I18nManager.isRTL ? 'right' : 'left';
-  if (align === 'end') return I18nManager.isRTL ? 'left' : 'right';
+  if (!align || align === 'start') return isRTL ? 'right' : 'left';
+  if (align === 'end') return isRTL ? 'left' : 'right';
   return 'center';
 };
 
@@ -40,5 +41,5 @@ export const Text = React.memo(function Text({ variant = 'body', color, weight, 
 });
 
 const styles = StyleSheet.create({
-  base: { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
+  base: { writingDirection: isRTL ? 'rtl' : 'ltr' },
 });

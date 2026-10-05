@@ -1,5 +1,6 @@
 import React, { forwardRef, useState } from 'react';
-import { I18nManager, Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { isRTL } from '@/lib/rtl';
 import { useTheme } from '@/theme/ThemeProvider';
 import { resolveFont } from '@/theme/typography';
 import { useLocaleStore } from '@/store/locale';
@@ -32,7 +33,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   const [hidden, setHidden] = useState(Boolean(secureTextEntry));
   const borderColor = error ? colors.danger : focused ? colors.primary : colors.line;
   const height = multiline ? undefined : size === 'lg' ? 56 : 52;
-  const isLTR = ltr || numeric || !I18nManager.isRTL;
+  const isLTR = ltr || numeric || !isRTL;
 
   return (
     <View style={[styles.wrap, containerStyle]}>
