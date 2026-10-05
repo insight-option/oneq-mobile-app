@@ -56,6 +56,34 @@ await cognito.send(new AdminSetUserPasswordCommand({ UserPoolId: pool, Username:
 await cognito.send(new AdminAddUserToGroupCommand({ UserPoolId: pool, Username: adminEmail, GroupName: 'ADMINS' }));
 console.log(`admin ${adminExisted ? 'updated' : 'created'}: ${adminEmail} (group ADMINS)`);
 
+/* ---------- 1b. optional phone admin — signs in with SMS OTP in the app (SEED_ADMIN_PHONE=+974XXXXXXXX) ---------- */
+const adminPhone = process.env.SEED_ADMIN_PHONE?.replace(/[\s-]/g, '');
+if (adminPhone) {
+  if (!/^\+[1-9]\d{7,14}$/.test(adminPhone)) throw new Error('SEED_ADMIN_PHONE must be E.164, e.g. +97450000000');
+  let phoneAdminExisted = true;
+  try {
+    await cognito.send(new AdminGetUserCommand({ UserPoolId: pool, Username: adminPhone }));
+  } catch {
+    phoneAdminExisted = false;
+    await cognito.send(
+      new AdminCreateUserCommand({
+        UserPoolId: pool,
+        Username: adminPhone,
+        MessageAction: 'SUPPRESS',
+        UserAttributes: [
+          { Name: 'phone_number', Value: adminPhone },
+          { Name: 'phone_number_verified', Value: 'true' }, // required: Cognito only sends OTP codes to verified numbers
+          { Name: 'name', Value: process.env.SEED_ADMIN_PHONE_NAME ?? 'إدارة OneQ' },
+        ],
+      }),
+    );
+  }
+  // a permanent password makes the account CONFIRMED (no temporary-password step); the app signs in with SMS OTP
+  await cognito.send(new AdminSetUserPasswordCommand({ UserPoolId: pool, Username: adminPhone, Password: adminPassword, Permanent: true }));
+  await cognito.send(new AdminAddUserToGroupCommand({ UserPoolId: pool, Username: adminPhone, GroupName: 'ADMINS' }));
+  console.log(`phone admin ${phoneAdminExisted ? 'updated' : 'created'}: ${adminPhone} (group ADMINS; signs in with SMS OTP — the number must be verified in the SNS sandbox while the account is sandboxed)`);
+}
+
 /* ---------- 2. admin sign-in + profile ---------- */
 await signOut().catch(() => undefined);
 const { nextStep } = await signIn({ username: adminEmail, password: adminPassword });

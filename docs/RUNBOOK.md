@@ -105,8 +105,17 @@ Seed script variables: `SEED_ADMIN_EMAIL` (default `admin@oneq.qa`), `SEED_ADMIN
 ### 3.3 SMS, WhatsApp, push, email
 
 - **SMS (Cognito → SNS)**: new AWS accounts are in the SNS SMS sandbox — only verified destination numbers receive codes.
-  Add test numbers in *SNS → Text messaging → Sandbox destination phone numbers*, then request production access and an
-  origination identity for Qatar before launch.
+  Exact steps: AWS console → **Amazon SNS** → *Text messaging (SMS)* → **Sandbox destination phone numbers** → *Add
+  phone number* → enter the number in E.164 (`+974XXXXXXXX`), language *English* → *Add phone number* → type the
+  verification code that arrives by SMS → status *Verified*. Do this in the region the user pool sends SMS from
+  (Cognito → user pool → *Messaging* → *SMS* → "SNS region"; ap-south-1 here). Also raise *Text messaging → Account
+  spend limit* above the default 1 USD/month when testing more than a handful of codes. Before launch, request
+  production access (*Exit SMS sandbox*) and an origination identity for Qatar.
+  Then: a customer simply signs in with that number in the app (self sign-up + 6-digit code); an admin with a phone
+  number is created with `SEED_ADMIN_PHONE=+974XXXXXXXX npx tsx scripts/seed-env.mts` (verified phone, group ADMINS,
+  signs in with the code) — or manually in Cognito: *Users → Create user*, phone number, "Mark phone number as
+  verified", no invitation, then *Groups → ADMINS → Add user*, then `aws cognito-idp admin-set-user-password
+  --permanent` so the account is CONFIRMED.
 - **WhatsApp gifts**: the `gifts` function reads `/oneq/whatsapp/token`, `/oneq/whatsapp/phoneId` and (optional)
   `/oneq/whatsapp/template` from SSM Parameter Store (`aws ssm put-parameter --name /oneq/whatsapp/token --type SecureString --value ...`).
   The approved Meta template (`oneq_gift`, Arabic + English) takes four body parameters: sender, item, message, link.

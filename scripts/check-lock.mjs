@@ -20,8 +20,8 @@ try {
   for (const file of ['package.json', 'package-lock.json', '.npmrc']) {
     if (existsSync(join(root, file))) copyFileSync(join(root, file), join(dir, file));
   }
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const res = spawnSync(npm, ['ci', '--dry-run', '--ignore-scripts', '--no-audit', '--no-fund', '--cache', join(dir, '.npm')], { cwd: dir, encoding: 'utf8', shell: process.platform === 'win32' });
+  // one command string (npm is a .cmd shim on Windows, which needs a shell; a string avoids Node's args+shell warning)
+  const res = spawnSync(`npm ci --dry-run --ignore-scripts --no-audit --no-fund --cache "${join(dir, '.npm')}"`, { cwd: dir, encoding: 'utf8', shell: true });
   const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
   if (res.status !== 0) {
     console.error(out.split('\n').filter((l) => /Missing|EUSAGE|ERESOLVE|npm error/.test(l)).join('\n') || out);
