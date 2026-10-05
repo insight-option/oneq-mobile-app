@@ -1,0 +1,28 @@
+# Amplify Hosting build spec (fullstack branch deployment of a React Native / Expo app).
+# backend  → deploys amplify/ with `ampx pipeline-deploy` (needs the app's service role to have
+#            AmplifyBackendDeployFullAccess; the first build also bootstraps CDK in the account).
+# frontend → there is no web build of the app; the artifact served on the hosting domain is the static
+#            landing page in web/ (the mobile app itself is built with EAS, see docs/RUNBOOK.md §3.4 / §4).
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - nvm install 22 && nvm use 22
+        - node --version && npm --version
+        - npm ci --cache .npm --prefer-offline --legacy-peer-deps
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+frontend:
+  phases:
+    build:
+      commands:
+        - mkdir -p dist
+        - cp -r web/. dist/
+        - cp assets/brand/logo.png dist/logo.png
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .npm/**/*

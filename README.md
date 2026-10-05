@@ -29,7 +29,7 @@ Without a deployed backend the app runs on seeded demo data (`src/data/mock`): s
 
 AWS Amplify Gen 2 (`amplify/`): Cognito (phone OTP + email/password, groups ADMINS / COMPANIES / CUSTOMERS), AppSync +
 DynamoDB, S3, Lambda handlers for bookings, gifts, ratings, admin operations, catalogue change notifications and
-subscription expiry. Deploy with `npx ampx sandbox --once`, seed with `npx ampx sandbox seed`. Details, SMS/WhatsApp/push
+subscription expiry. Deploy a sandbox with `npx ampx sandbox --once` + `npx ampx sandbox seed`; production deploys from Amplify Hosting on every push to `main` (`amplify.yml`), seeded once with `scripts/seed-env.mts`. Details, SMS/WhatsApp/push
 setup and release steps: `docs/RUNBOOK.md`. Architecture and functional spec: `docs/ARCHITECTURE.md`.
 
 ## Project layout

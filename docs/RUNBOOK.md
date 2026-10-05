@@ -108,12 +108,33 @@ Seed script variables: `SEED_ADMIN_EMAIL` (default `admin@oneq.qa`), `SEED_ADMIN
 - **Email**: Cognito's default sender works for the sandbox; configure SES (`senders.email` in `amplify/auth/resource.ts`)
   after SES production access.
 
-### 3.4 Production
+### 3.4 Production (Amplify Hosting, fullstack branch deployment)
+
+The GitHub repo `insight-option/oneq-mobile-app` is connected to the Amplify app `oneq-mobile-app`
+(app id `d3rw7vgtsyn0ne`, account `982468346762`, region ap-south-1, domain `oneq.qa`). Every push to `main` runs
+`amplify.yml`:
+
+- **backend** phase: `npm ci --legacy-peer-deps` (the lock file is generated with `legacy-peer-deps=true` from
+  `.npmrc`; without it `npm ci` fails with "Missing … from lock file" because peer dependencies such as
+  `@aws-sdk/client-dynamodb` and `@aws-cdk/cli-plugin-contract` are intentionally not installed) and then
+  `npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID`. The app's service role must carry the
+  `AmplifyBackendDeployFullAccess` policy (Amplify console → App settings → IAM roles); the first build also
+  bootstraps CDK in the account.
+- **frontend** phase: there is no web build of the mobile app, so the artifact served on `oneq.qa` is the static
+  landing page in `web/` (plus `assets/brand/logo.png`). Replace `web/index.html` when a real website exists.
+
+After the first successful build, from a machine with credentials for the **production** account:
 
 ```powershell
-npx ampx pipeline-deploy --branch main --app-id <AMPLIFY_APP_ID>   # from Amplify Hosting CI, or:
-npx ampx generate outputs --branch main --app-id <AMPLIFY_APP_ID>  # fetch outputs for a release build
+npx ampx generate outputs --branch main --app-id d3rw7vgtsyn0ne --profile <prod-profile>   # writes amplify_outputs.json
+$env:SEED_ADMIN_PASSWORD = '<strong password>'; $env:AWS_PROFILE = '<prod-profile>'
+npx tsx scripts/seed-env.mts                                                               # admin (group ADMINS) + categories
 ```
+
+`scripts/seed-env.mts` is the branch equivalent of `npx ampx sandbox seed` (which only targets sandboxes): it creates
+the admin through the Cognito admin API (no e-mail is sent), signs in as the admin and inserts the categories from
+`src/data/mock/seed/categories.ts` (idempotent, matched by slug). Companies are then created from the admin
+workspace. Release builds (§4) must use the `amplify_outputs.json` generated from the branch, not the sandbox one.
 
 Cognito sign-in options are immutable: never change `loginWith` on a live pool (the sandbox would recreate it and drop
 every user). GSI changes recreate tables in the sandbox — seed again afterwards. `backend.ts` pins the user-pool

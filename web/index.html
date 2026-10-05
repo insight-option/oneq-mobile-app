@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OneQ — منصة الخدمات الأولى في قطر</title>
+    <meta name="description" content="OneQ: احجز الصالونات والعيادات والنوادي الرياضية والخدمات المنزلية في قطر من تطبيق واحد." />
+    <meta property="og:title" content="OneQ — منصة الخدمات الأولى في قطر" />
+    <meta property="og:description" content="تطبيق OneQ قادم قريباً على iOS وAndroid." />
+    <meta property="og:image" content="/logo.png" />
+    <link rel="icon" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --maroon: #5a0020;
+        --maroon-deep: #3a0014;
+        --cream: #f7f0ea;
+        --gold: #d4a853;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        color: var(--cream);
+        background: radial-gradient(120% 90% at 50% 0%, #7a0a33 0%, var(--maroon) 45%, var(--maroon-deep) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 20px;
+        text-align: center;
+      }
+      main { max-width: 560px; width: 100%; }
+      .logo {
+        width: 128px;
+        height: 128px;
+        border-radius: 50%;
+        background: #fff;
+        padding: 14px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        margin: 0 auto 28px;
+        display: block;
+        object-fit: contain;
+      }
+      h1 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: clamp(44px, 10vw, 72px);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin: 0 0 6px;
+        color: #fbf3ea;
+      }
+      .tagline { font-size: clamp(18px, 3.4vw, 22px); margin: 0 0 30px; opacity: 0.92; }
+      .badge {
+        display: inline-block;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+        padding: 10px 22px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .badge b { color: var(--gold); font-weight: 700; }
+      .en { direction: ltr; font-size: 15px; opacity: 0.8; margin-top: 26px; line-height: 1.6; }
+      .services {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin: 30px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 14px;
+      }
+      .services li { padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); }
+      footer { margin-top: 44px; font-size: 13px; opacity: 0.6; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="/logo.png" alt="OneQ" width="128" height="128" />
+      <h1>OneQ</h1>
+      <p class="tagline">منصة الخدمات الأولى في قطر</p>
+      <span class="badge">التطبيق قادم قريباً على <b>App Store</b> و<b>Google Play</b></span>
+      <ul class="services">
+        <li>العيادات</li>
+        <li>النوادي الرياضية</li>
+        <li>الصالونات</li>
+        <li>الخدمات المنزلية</li>
+        <li>البناء والتصميم</li>
+      </ul>
+      <p class="en">Qatar's multi-service booking app — clinics, gyms, salons, home services and construction, with gifting and loyalty points. Coming soon to iOS and Android.</p>
+      <footer>© 2026 OneQ</footer>
+    </main>
+  </body>
+</html>
