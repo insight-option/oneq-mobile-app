@@ -78,7 +78,8 @@
     "prebuild": "expo prebuild --clean",
     "sandbox": "ampx sandbox",
     "sandbox:once": "ampx sandbox --once",
-    "lock:check": "node scripts/check-lock.mjs"
+    "lock:check": "node scripts/check-lock.mjs",
+    "eas-build-pre-install": "npm install --package-lock-only --legacy-peer-deps --no-audit --no-fund"
   },
   "private": true
 }

@@ -131,12 +131,13 @@ The GitHub repo `insight-option/oneq-mobile-app` is connected to the Amplify app
 (app id `d3rw7vgtsyn0ne`, account `982468346762`, region ap-south-1, domain `oneq.qa`). Every push to `main` runs
 `amplify.yml`:
 
-- **backend** phase: `npm ci --legacy-peer-deps` (the lock file is generated with `legacy-peer-deps=true` from
-  `.npmrc`; without it `npm ci` fails with "Missing … from lock file" because peer dependencies such as
-  `@aws-sdk/client-dynamodb` and `@aws-cdk/cli-plugin-contract` are intentionally not installed). After any
-  `npm install` / `npx expo install`, run `npm run lock:check` before pushing — npm has dropped nested exact-pinned
-  entries from the lock more than once, which only fails in CI; `npm install --package-lock-only --legacy-peer-deps`
-  repairs it — and then
+- **backend** phase: `npm install --legacy-peer-deps` (deliberately not `npm ci`: `legacy-peer-deps=true` in
+  `.npmrc` keeps peer dependencies such as `@aws-sdk/client-dynamodb` out of the lock, and npm repeatedly dropped
+  the nested exact-pinned `@opentelemetry/*@2.0.0` entries under `@aws-amplify/data-construct` whenever a plain
+  `npm install` ran against a node_modules tree that lacked them — `npm ci` then refuses with "Missing … from lock
+  file" while `npm install` just repairs it). Keep the lock healthy anyway: after any `npm install` /
+  `npx expo install`, run `npm run lock:check`; `npm install --package-lock-only --legacy-peer-deps` fixes a drifted
+  lock. Then
   `npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID`. The app's service role must carry the
   `AmplifyBackendDeployFullAccess` policy (Amplify console → App settings → IAM roles); the first build also
   bootstraps CDK in the account.
