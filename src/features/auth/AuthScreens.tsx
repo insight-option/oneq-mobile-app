@@ -222,11 +222,13 @@ export const EmailScreen = () => {
   const phoneFlow = useAuthFlow();
 
   const submitEmail = async () => {
-    if (!email.includes('@')) {
-      toast.error(t('auth.errors.invalidEmail'));
+    // e-mail (admins) or phone number (company owners: their Cognito username)
+    const identifier = email.trim();
+    if (!identifier.includes('@') && !isValidQatarPhone(identifier)) {
+      toast.error(/\d/.test(identifier) ? t('auth.phone.invalid') : t('auth.errors.invalidEmail'));
       return;
     }
-    const step = await signInEmail(email, password);
+    const step = await signInEmail(identifier, password);
     if (!step) return;
     if (step.step === 'NEW_PASSWORD') router.push({ pathname: '/(auth)/new-password', params: { email: step.destination } });
     else land(step);
@@ -266,7 +268,7 @@ export const EmailScreen = () => {
         />
         {segment === 'email' ? (
           <>
-            <Input label={t('auth.email.label')} placeholder={t('auth.email.placeholder')} value={email} onChangeText={setEmail} leftIcon="mail" keyboardType="email-address" autoCapitalize="none" autoComplete="email" ltr />
+            <Input label={t('auth.email.identifierLabel')} placeholder={t('auth.email.identifierPlaceholder')} value={email} onChangeText={setEmail} leftIcon="mail" keyboardType="email-address" autoCapitalize="none" autoComplete="username" ltr />
             <Input label={t('auth.password.label')} placeholder={t('auth.password.placeholder')} value={password} onChangeText={setPassword} leftIcon="lock" secureTextEntry secureToggle ltr labelAction={{ label: t('auth.password.forgot'), onPress: () => router.push('/(auth)/forgot') }} onSubmitEditing={submitEmail} />
             <Checkbox checked={remember} onChange={setRemember} label={t('auth.remember')} />
             <Button label={t('auth.login')} size="lg" fullWidth loading={loading} onPress={submitEmail} />

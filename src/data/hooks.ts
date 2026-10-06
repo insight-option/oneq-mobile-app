@@ -417,6 +417,10 @@ export const useAdminUpsertCategory = () => {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (input: UpsertCategoryInput) => repo.admin.upsertCategory(input), onSuccess: () => invalidateAdmin(qc) });
 };
+export const useAdminResendInvitation = () => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => repo.admin.resendInvitation(id), onSuccess: () => invalidateAdmin(qc) });
+};
 export const useAdminDeleteCompany = () => {
   const qc = useQueryClient();
   return useMutation({

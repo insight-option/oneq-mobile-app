@@ -28,6 +28,6 @@ export const auth = defineAuth({
   triggers: { postConfirmation },
   access: (allow) => [
     allow.resource(postConfirmation).to(['addUserToGroup', 'listGroupsForUser']),
-    allow.resource(adminFn).to(['createUser', 'addUserToGroup', 'setUserPassword', 'getUser', 'updateUserAttributes', 'listGroupsForUser']),
+    allow.resource(adminFn).to(['createUser', 'deleteUser', 'addUserToGroup', 'setUserPassword', 'getUser', 'updateUserAttributes', 'listGroupsForUser']),
   ],
 });

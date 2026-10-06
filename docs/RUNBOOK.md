@@ -123,7 +123,16 @@ Seed script variables: `SEED_ADMIN_EMAIL` (default `admin@oneq.qa`), `SEED_ADMIN
 - **Push**: tokens are registered in `PushToken`; sending uses `https://exp.host/--/api/v2/push/send`. Set
   `EAS_PROJECT_ID` in `.env` (from `npx eas-cli init`) and upload the FCM V1 service account with `eas credentials`.
 - **Email**: Cognito's default sender works for the sandbox; configure SES (`senders.email` in `amplify/auth/resource.ts`)
-  after SES production access.
+  after SES production access (the default sender is capped at 50 e-mails/day).
+- **Company invitations**: an owner created with an e-mail receives Cognito's invitation (template in
+  `amplify/backend.ts`: username = phone number, temporary password valid 30 days). The admin function must pass a
+  `TemporaryPassword`: in this pool (OTP sign-in enabled) `AdminCreateUser` without one creates a CONFIRMED user with
+  no password and the e-mail shows a literal `{####}`. The owner signs in on the password screen with the **phone
+  number** (Cognito only accepts the attribute a user was created with as sign-in name; the verified e-mail is not an
+  alias) and the temporary password, then sets a permanent one. Lost e-mail, expired password or an owner created
+  before this fix: admin workspace → company → *Resend invitation* (`adminResendInvitation`: fresh temporary password;
+  for an owner who already set a password it works as an admin-side reset). The owner e-mail can be corrected in the
+  company edit form before resending.
 
 ### 3.4 Production (Amplify Hosting, fullstack branch deployment)
 

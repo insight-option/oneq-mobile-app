@@ -420,7 +420,7 @@ export interface ActivityLog {
   actorName: string;
   companyId?: string | null;
   companyName?: LocalizedText | null;
-  action: 'SERVICE_CREATED' | 'SERVICE_UPDATED' | 'PRODUCT_CREATED' | 'PRODUCT_UPDATED' | 'OFFER_SET' | 'OFFER_REMOVED' | 'STAFF_CREATED' | 'STAFF_UPDATED' | 'PROFILE_UPDATED' | 'COMPANY_CREATED' | 'COMPANY_DELETED' | 'CATEGORY_CREATED';
+  action: 'SERVICE_CREATED' | 'SERVICE_UPDATED' | 'PRODUCT_CREATED' | 'PRODUCT_UPDATED' | 'OFFER_SET' | 'OFFER_REMOVED' | 'STAFF_CREATED' | 'STAFF_UPDATED' | 'PROFILE_UPDATED' | 'COMPANY_CREATED' | 'COMPANY_DELETED' | 'INVITATION_RESENT' | 'CATEGORY_CREATED';
   summary: LocalizedText;
   createdAt: ISODateTime;
 }
@@ -636,6 +636,7 @@ export type CompanyProfilePatch = Partial<
     | 'phone'
     | 'whatsapp'
     | 'email'
+    | 'ownerEmail'
     | 'serviceMode'
     | 'offersSubscriptions'
     | 'hasStaff'

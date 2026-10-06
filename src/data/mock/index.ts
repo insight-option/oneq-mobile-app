@@ -37,7 +37,7 @@ import type {
 } from '@/domain/types';
 import type { OneQRepository } from '../repository';
 import { id as makeId, bookingCode, giftCode, subscriptionCode, hashString } from '@/lib/ids';
-import { buildWhatsAppUrl, normalizeQatarPhone, samePhone } from '@/lib/phone';
+import { buildWhatsAppUrl, normalizeLoginIdentifier, normalizeQatarPhone, samePhone } from '@/lib/phone';
 import { fuzzyScoreMany, normalizeText, slugify } from '@/lib/text';
 import { haversineKm } from '@/lib/geo';
 import { addDays, buildSlots, isOpenNow, nowIso, todayStr, weekdayOf, makeHours, DEFAULT_HOURS } from '@/lib/time';
@@ -315,9 +315,10 @@ export const createMockRepository = (): OneQRepository => {
       async resendOtp() {
         await delay(300);
       },
-      async signInWithEmail(email, password) {
+      async signInWithEmail(identifier, password) {
         await delay();
-        const u = state.users.find((x) => x.email && x.email.toLowerCase() === email.trim().toLowerCase());
+        const username = normalizeLoginIdentifier(identifier);
+        const u = username ? state.users.find((x) => (x.email && x.email.toLowerCase() === username) || samePhone(x.phone, username)) : undefined;
         if (!u || password !== DEMO.password) throw new Error('INVALID_CREDENTIALS');
         currentUserId = u.id;
         await AsyncStorage.setItem(SESSION_KEY, JSON.stringify({ userId: u.id }));
@@ -1197,6 +1198,15 @@ export const createMockRepository = (): OneQRepository => {
         state.staff = state.staff.filter((x) => x.companyId !== id);
         state.users = state.users.filter((u) => u.id !== c.ownerUserId);
         save();
+      },
+      async resendInvitation(id) {
+        await delay();
+        const c = companyById(id);
+        if (!c) throw new Error('NOT_FOUND');
+        if (!c.ownerEmail) throw new Error('NO_EMAIL');
+        logActivity('INVITATION_RESENT', c, { ar: `أُعيد إرسال دعوة الدخول لشركة ${c.name.ar}`, en: `Invitation re-sent to ${c.name.en}` });
+        save();
+        return { email: c.ownerEmail };
       },
       async setCompanyActive(id, isActive) {
         await delay();

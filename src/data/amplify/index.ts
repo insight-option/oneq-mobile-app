@@ -45,7 +45,7 @@ import type {
 import { amplifyInfo, configureAmplify } from '@/lib/amplify';
 import { haversineKm } from '@/lib/geo';
 import { presentLocal } from '@/lib/notifications';
-import { normalizeQatarPhone } from '@/lib/phone';
+import { normalizeLoginIdentifier, normalizeQatarPhone } from '@/lib/phone';
 import { fuzzyScoreMany, normalizeText, slugify } from '@/lib/text';
 import { addDays, DEFAULT_HOURS, isOpenNow, todayStr } from '@/lib/time';
 import type { OneQRepository } from '../repository';
@@ -686,14 +686,18 @@ export const createAmplifyRepository = (): OneQRepository => {
       async resendOtp() {
         if (pending?.kind === 'signup') await resendSignUpCode({ username: pending.username });
       },
-      async signInWithEmail(email, password) {
+      async signInWithEmail(identifier, password) {
+        // Cognito only accepts the attribute a user was created with as sign-in name: owners (username = phone number)
+        // sign in with their phone, admins with their e-mail — a verified e-mail added later is NOT a sign-in alias.
+        const username = normalizeLoginIdentifier(identifier);
+        if (!username) throw new Error('INVALID_PHONE');
         // Expo Go has no @aws-amplify/react-native native module, so the default SRP flow cannot compute its proof there;
         // the choice-based USER_AUTH flow with the plain PASSWORD challenge needs no native code (TLS still protects it).
-        const { nextStep } = await signIn({ username: email.trim().toLowerCase(), password, options: isExpoGo ? { authFlowType: 'USER_AUTH', preferredChallenge: 'PASSWORD' } : undefined });
+        const { nextStep } = await signIn({ username, password, options: isExpoGo ? { authFlowType: 'USER_AUTH', preferredChallenge: 'PASSWORD' } : undefined });
         if (nextStep.signInStep === 'DONE') return { step: 'DONE', session: await finishSignIn() };
         if (nextStep.signInStep === 'CONFIRM_SIGN_UP') throw new Error('USER_NOT_CONFIRMED');
         // users created in the Cognito console / with AdminCreateUser hold a temporary password until they set their own
-        if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') return { step: 'NEW_PASSWORD', destination: email.trim().toLowerCase() };
+        if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') return { step: 'NEW_PASSWORD', destination: username };
         if (nextStep.signInStep === 'RESET_PASSWORD') throw new Error('RESET_PASSWORD');
         throw new Error(`UNSUPPORTED_STEP_${nextStep.signInStep}`);
       },
@@ -1236,6 +1240,10 @@ export const createAmplifyRepository = (): OneQRepository => {
       async deleteCompany(id) {
         ok(await api().mutations.adminDeleteCompany({ companyId: id }, { authMode: 'userPool' }), 'company');
         companiesCache = null;
+      },
+      async resendInvitation(id) {
+        const res = ok(await api().mutations.adminResendInvitation({ companyId: id }, { authMode: 'userPool' }), 'invitation');
+        return { email: parse<{ email: string }>(res.data).email };
       },
       async setCompanyActive(id, isActive) {
         const res = ok(await api().models.Company.update({ id, isActive }, { authMode: 'userPool' }), 'company');

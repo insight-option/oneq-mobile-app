@@ -30,6 +30,18 @@ export function isValidQatarPhone(input: string | null | undefined): boolean {
   return normalizeQatarPhone(input) !== null;
 }
 
+/**
+ * Sign-in name typed on the password screen: an e-mail address (lower-cased) or a Qatari phone number (E.164).
+ * Company owners are created with their phone number as Cognito username, so that is what they sign in with;
+ * admins use their e-mail. Returns null for something that is neither.
+ */
+export function normalizeLoginIdentifier(input: string | null | undefined): string | null {
+  const value = (input ?? '').trim();
+  if (!value) return null;
+  if (value.includes('@')) return value.toLowerCase();
+  return normalizeQatarPhone(value);
+}
+
 /** `+97450000003` → `50000003` */
 export function localPart(phone: string): string {
   const normalized = normalizeQatarPhone(phone);

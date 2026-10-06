@@ -1,5 +1,5 @@
 import type { AppSyncResolverEvent } from 'aws-lambda';
-import { AdminAddUserToGroupCommand, AdminCreateUserCommand, AdminDeleteUserCommand, AdminSetUserPasswordCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
+import { AdminAddUserToGroupCommand, AdminCreateUserCommand, AdminDeleteUserCommand, AdminGetUserCommand, AdminSetUserPasswordCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import { randomBytes } from 'node:crypto';
 import { env } from '$amplify/env/admin';
 import type { AdminCreateCompanyInput } from '../../../src/domain/types';
@@ -31,16 +31,28 @@ const slugify = (s: string) =>
     .trim()
     .replace(/[\s-]+/g, '-');
 
-/** Random permanent password so the owner account is CONFIRMED (owners sign in with SMS OTP, never with this). */
-const randomPassword = () => {
+/**
+ * Random password that satisfies the pool policy (upper/lower/digit/symbol, no look-alike characters). 12 characters
+ * for the temporary password an owner types from the invitation e-mail, 24 for permanent ones nobody ever types.
+ */
+const randomPassword = (length = 24) => {
   const sets = ['ABCDEFGHJKLMNPQRSTUVWXYZ', 'abcdefghijkmnopqrstuvwxyz', '23456789', '!@#$%^&*'];
-  const bytes = randomBytes(24);
+  const bytes = randomBytes(length);
   let out = '';
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < length; i++) {
     const set = sets[i % sets.length];
     out += set[bytes[i] % set.length];
   }
   return out;
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** E-mail and phone number are both sign-in identifiers, so a duplicate of either surfaces as a Cognito "exists" error. */
+const cognitoConflict = (e: unknown): unknown => {
+  const err = e as { name?: string; message?: string };
+  if (err.name === 'UsernameExistsException' || err.name === 'AliasExistsException') return new ApiError(/email/i.test(err.message ?? '') ? 'EMAIL_EXISTS' : 'PHONE_EXISTS');
+  return e;
 };
 
 const requireAdmin = (event: Event) => {
@@ -60,15 +72,18 @@ const adminCreateCompany = async (client: DataClient, event: Event) => {
   if (existing.data?.length) throw new ApiError('PHONE_EXISTS');
 
   const ownerEmail = input.ownerEmail?.trim().toLowerCase() || null;
+  if (ownerEmail && !EMAIL_RE.test(ownerEmail)) throw new ApiError('INVALID_EMAIL');
   let sub: string;
   try {
     // With an e-mail address Cognito sends the invitation itself (template in amplify/backend.ts): username + temporary
     // password; the app then forces a new password on the first e-mail login. Phone OTP login works either way.
+    // The temporary password MUST be supplied here: in a pool with passwordless (OTP) sign-in, AdminCreateUser without
+    // one creates a CONFIRMED user that has no password at all, and the invitation then carries a literal "{####}".
     const created = await cognito.send(
       new AdminCreateUserCommand({
         UserPoolId: userPoolId(),
         Username: ownerPhone,
-        ...(ownerEmail ? { DesiredDeliveryMediums: ['EMAIL'] } : { MessageAction: 'SUPPRESS' }),
+        ...(ownerEmail ? { DesiredDeliveryMediums: ['EMAIL'], TemporaryPassword: randomPassword(12) } : { MessageAction: 'SUPPRESS' }),
         UserAttributes: [
           { Name: 'phone_number', Value: ownerPhone },
           { Name: 'phone_number_verified', Value: 'true' },
@@ -79,8 +94,7 @@ const adminCreateCompany = async (client: DataClient, event: Event) => {
     );
     sub = created.User?.Attributes?.find((a) => a.Name === 'sub')?.Value ?? '';
   } catch (e) {
-    if ((e as { name?: string }).name === 'UsernameExistsException') throw new ApiError('PHONE_EXISTS');
-    throw e;
+    throw cognitoConflict(e);
   }
   if (!sub) throw new ApiError('USER_CREATE_FAILED');
   // no e-mail → nobody receives the temporary password, so confirm the account with a random permanent one (OTP-only login)
@@ -183,6 +197,50 @@ const adminDeleteCompany = async (client: DataClient, event: Event) => {
   return { ok: true };
 };
 
+/* ---------- adminResendInvitation ---------- */
+/**
+ * Sends the owner a fresh invitation (same Cognito template, new temporary password, new 30-day validity). Covers lost
+ * e-mails and expired temporary passwords; for an owner who already chose a password it acts as an admin-side reset —
+ * the old password stops working until they sign in with the new temporary one.
+ */
+const adminResendInvitation = async (client: DataClient, event: Event) => {
+  const adminSub = requireAdmin(event);
+  const companyId = String(event.arguments.companyId ?? '');
+  const company = (await client.models.Company.get({ id: companyId })).data;
+  if (!company) throw new ApiError('NOT_FOUND');
+  const email = company.ownerEmail?.trim().toLowerCase() ?? '';
+  if (!email || !EMAIL_RE.test(email)) throw new ApiError('NO_EMAIL');
+  if (!company.ownerPhone) throw new ApiError('NOT_FOUND');
+  const pool = userPoolId();
+  const username = company.ownerPhone;
+  let user;
+  try {
+    user = await cognito.send(new AdminGetUserCommand({ UserPoolId: pool, Username: username }));
+  } catch (e) {
+    if ((e as { name?: string }).name === 'UserNotFoundException') throw new ApiError('NOT_FOUND');
+    throw e;
+  }
+  // the invitation goes to the company's current owner e-mail, which may have been edited after the account was created
+  const attrs = Object.fromEntries((user.UserAttributes ?? []).map((a) => [a.Name, a.Value ?? '']));
+  if (attrs.email !== email || attrs.email_verified !== 'true') {
+    try {
+      await cognito.send(new AdminUpdateUserAttributesCommand({ UserPoolId: pool, Username: username, UserAttributes: [{ Name: 'email', Value: email }, { Name: 'email_verified', Value: 'true' }] }));
+    } catch (e) {
+      throw cognitoConflict(e);
+    }
+  }
+  // RESEND only works while the account holds a temporary password; confirmed owners (incl. password-less ones created
+  // before temporary passwords were supplied) get a throw-away one first, RESEND then issues and e-mails a fresh one
+  if (user.UserStatus !== 'FORCE_CHANGE_PASSWORD') {
+    await cognito.send(new AdminSetUserPasswordCommand({ UserPoolId: pool, Username: username, Password: randomPassword(), Permanent: false }));
+  }
+  await cognito.send(new AdminCreateUserCommand({ UserPoolId: pool, Username: username, MessageAction: 'RESEND', DesiredDeliveryMediums: ['EMAIL'] }));
+  const admin = (await client.models.UserProfile.get({ id: adminSub })).data;
+  const name: LocalizedText = { ar: company.name?.ar ?? '', en: company.name?.en ?? company.name?.ar ?? '' };
+  await logActivity(client, { actorId: adminSub, actorName: admin?.name ?? 'OneQ', companyId, companyName: name, action: 'INVITATION_RESENT', summary: { ar: `أُعيد إرسال دعوة الدخول لشركة ${name.ar}`, en: `Invitation re-sent to ${name.en}` } });
+  return { ok: true, email };
+};
+
 /* ---------- broadcastNotification ---------- */
 const broadcastNotification = async (client: DataClient, event: Event) => {
   requireAdmin(event);
@@ -202,6 +260,8 @@ export const handler = async (event: Event) => {
       return broadcastNotification(client, event);
     case 'adminDeleteCompany':
       return adminDeleteCompany(client, event);
+    case 'adminResendInvitation':
+      return adminResendInvitation(client, event);
     default:
       throw new ApiError('UNKNOWN_FIELD_' + field);
   }

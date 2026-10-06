@@ -54,7 +54,8 @@ export interface AuthService {
   signUpWithPhone(input: { phone: string; name: string; email?: string }): Promise<AuthNextStep>;
   confirmOtp(code: string): Promise<AuthNextStep>;
   resendOtp(): Promise<void>;
-  signInWithEmail(email: string, password: string): Promise<AuthNextStep>;
+  /** `identifier` is an e-mail address (admins) or a phone number (company owners — their Cognito username). */
+  signInWithEmail(identifier: string, password: string): Promise<AuthNextStep>;
   /** Finish a sign-in that returned NEW_PASSWORD (temporary password → permanent one). */
   completeNewPassword(newPassword: string): Promise<AuthNextStep>;
   signUpWithEmail(input: { email: string; password: string; name: string; phone: string }): Promise<AuthNextStep>;
@@ -160,6 +161,8 @@ export interface AdminRepo {
   setCompanyActive(id: string, isActive: boolean): Promise<Company>;
   /** Removes the company, its catalogue and the owner account (bookings are kept for history). */
   deleteCompany(id: string): Promise<void>;
+  /** E-mails the owner a new invitation (new temporary password); requires the company's owner e-mail. */
+  resendInvitation(id: string): Promise<{ email: string }>;
   upsertCategory(input: UpsertCategoryInput): Promise<Category>;
   deleteCategory(id: string): Promise<void>;
   listBookingsByDay(date: DateString): Promise<Booking[]>;

@@ -117,7 +117,11 @@ const AdminCompanyFormBody = ({ existing }: { existing: Company | null }) => {
     const description = { ar: form.descAr.trim(), en: form.descEn.trim() || form.descAr.trim() };
     const address = { ar: form.addressAr.trim(), en: form.addressEn.trim() || form.addressAr.trim() };
     const whatsapp = normalizeQatarPhone(form.whatsapp);
-    const email = form.ownerEmail.trim() || null;
+    const email = form.ownerEmail.trim().toLowerCase() || null;
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      toast.error(t('ad.form.invalidEmail'));
+      return;
+    }
     try {
       if (!existing) {
         const ownerPhone = normalizeQatarPhone(form.ownerPhone);
@@ -158,6 +162,8 @@ const AdminCompanyFormBody = ({ existing }: { existing: Company | null }) => {
             phone: normalizeQatarPhone(form.phone) ?? existing.phone,
             whatsapp,
             email,
+            // the owner e-mail is where "Resend invitation" delivers the temporary password (Cognito is re-synced there)
+            ownerEmail: email,
             serviceMode: form.serviceMode,
             offersSubscriptions: form.offersSubscriptions,
             audience: form.audience,
@@ -169,7 +175,7 @@ const AdminCompanyFormBody = ({ existing }: { existing: Company | null }) => {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
-      toast.error(msg === 'PHONE_EXISTS' ? t('ad.form.phoneExists') : msg === 'INVALID_PHONE' ? t('ad.form.invalid') : t('common.error'));
+      toast.error(msg === 'PHONE_EXISTS' ? t('ad.form.phoneExists') : msg === 'EMAIL_EXISTS' ? t('ad.form.emailExists') : msg === 'INVALID_EMAIL' ? t('ad.form.invalidEmail') : msg === 'INVALID_PHONE' ? t('ad.form.invalid') : t('common.error'));
     }
   };
 

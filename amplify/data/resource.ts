@@ -422,6 +422,12 @@ const schema = a
       .returns(a.json())
       .authorization((allow) => [allow.group('ADMINS')])
       .handler(a.handler.function(adminFn)),
+    adminResendInvitation: a
+      .mutation()
+      .arguments({ companyId: a.id().required() })
+      .returns(a.json())
+      .authorization((allow) => [allow.group('ADMINS')])
+      .handler(a.handler.function(adminFn)),
   })
   .authorization((allow) => [
     allow.resource(postConfirmation).to(['query', 'mutate']),

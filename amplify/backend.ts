@@ -63,26 +63,39 @@ backend.auth.resources.cfnResources.cfnUserPool.schema = [
 ];
 
 /*
- * Cognito: invitation sent to company owners created from the admin workspace (AdminCreateUser with an e-mail).
- * `{username}` is the owner's phone number (the Cognito username) and `{####}` the temporary password; both
- * placeholders are mandatory. Self sign-up must stay enabled (customers register themselves).
+ * Cognito: invitation sent to company owners created from the admin workspace (AdminCreateUser with an e-mail, and
+ * `adminResendInvitation`). `{username}` is the owner's phone number (the Cognito username) and `{####}` the temporary
+ * password — which only exists when the admin function supplies one (see handler.ts: in a pool with OTP sign-in a user
+ * created without a password is CONFIRMED and the placeholder is sent literally). Each placeholder appears exactly once,
+ * in a credentials block shared by the Arabic and English text. Self sign-up must stay enabled (customers register
+ * themselves).
  */
-backend.auth.resources.cfnResources.cfnUserPool.adminCreateUserConfig = {
+const INVITE_EMAIL_HTML = [
+  '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;font-size:15px;line-height:1.7">',
+  '<div style="background:#0f766e;color:#ffffff;padding:16px 24px;border-radius:14px 14px 0 0;font-size:22px;font-weight:bold;text-align:center;letter-spacing:.5px">OneQ</div>',
+  '<div style="border:1px solid #e5e7eb;border-top:0;border-radius:0 0 14px 14px;padding:22px 24px">',
+  '<p dir="rtl" style="margin:0 0 10px;text-align:right">أهلاً بك في <b>OneQ</b> — تم إنشاء حساب شركتك. هذه بيانات الدخول:</p>',
+  '<p dir="ltr" style="margin:0 0 18px;text-align:left;color:#4b5563;font-size:14px">Welcome to <b>OneQ</b> — your company account is ready. Your login details:</p>',
+  '<table dir="ltr" role="presentation" cellpadding="0" cellspacing="0" style="width:100%;background:#f3f4f6;border-radius:12px">',
+  '<tr><td style="padding:14px 18px 2px;color:#6b7280;font-size:13px;text-align:center">اسم المستخدم (رقم الجوال) · Username (phone number)</td></tr>',
+  '<tr><td style="padding:0 18px 12px;font-size:20px;font-weight:bold;text-align:center;letter-spacing:.5px">{username}</td></tr>',
+  '<tr><td style="padding:0 18px 2px;color:#6b7280;font-size:13px;text-align:center">كلمة المرور المؤقتة · Temporary password</td></tr>',
+  '<tr><td style="padding:0 18px 16px;font-size:20px;font-weight:bold;text-align:center;font-family:Consolas,Menlo,monospace;letter-spacing:1px">{####}</td></tr>',
+  '</table>',
+  '<p dir="rtl" style="margin:18px 0 10px;text-align:right">في التطبيق اختر «كلمة المرور»، ثم أدخل رقم جوالك (اسم المستخدم أعلاه) وكلمة المرور المؤقتة واختر كلمة مرورك الجديدة. يمكنك أيضًا الدخول برقم جوالك عبر رمز التحقق. كلمة المرور المؤقتة صالحة لمدة 30 يومًا.</p>',
+  '<p dir="ltr" style="margin:0;text-align:left;color:#4b5563;font-size:14px">In the app choose “Password”, enter your phone number (the username above) and this temporary password, then choose your new password. You can also sign in with your phone number and the SMS code. The temporary password is valid for 30 days.</p>',
+  '</div>',
+  '</div>',
+].join('');
+
+const cfnUserPool = backend.auth.resources.cfnResources.cfnUserPool;
+cfnUserPool.adminCreateUserConfig = {
   allowAdminCreateUserOnly: false,
   inviteMessageTemplate: {
     emailSubject: 'OneQ — بيانات دخول شركتك | Your OneQ company account',
-    emailMessage: [
-      '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.8">',
-      '<p>أهلاً بك في <b>OneQ</b> — تم إنشاء حساب شركتك.</p>',
-      '<p>اسم المستخدم (رقم الجوال): <b dir="ltr">{username}</b><br/>كلمة المرور المؤقتة: <b dir="ltr">{####}</b></p>',
-      '<p>سجّل الدخول من التطبيق ببريدك الإلكتروني وكلمة المرور المؤقتة ثم اختر كلمة مرور جديدة، أو ادخل برقم جوالك عبر رمز التحقق.</p>',
-      '</div>',
-      '<div dir="ltr" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#444;margin-top:16px">',
-      '<p>Welcome to <b>OneQ</b> — your company account is ready.</p>',
-      '<p>Username (phone number): <b>{username}</b><br/>Temporary password: <b>{####}</b></p>',
-      '<p>Sign in with your e-mail and this temporary password (you will choose a new one), or with your phone number and the SMS code.</p>',
-      '</div>',
-    ].join(''),
+    emailMessage: INVITE_EMAIL_HTML,
     smsMessage: 'OneQ: اسم المستخدم {username} وكلمة المرور المؤقتة {####}',
   },
 };
+// owners often open the invitation days later; the Cognito default (7 days) left them with an expired temporary password
+cfnUserPool.addPropertyOverride('Policies.PasswordPolicy.TemporaryPasswordValidityDays', 30);

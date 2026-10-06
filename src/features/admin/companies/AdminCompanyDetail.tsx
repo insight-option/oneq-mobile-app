@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AreaChart, Avatar, BottomSheet, Button, Card, ConfirmContent, DateStrip, EmptyState, Header, Icon, IconBubble, KpiCard, PriceTag, ProgressBar, RatingPill, Screen, SegmentedControl, Skeleton, StatusPill, Tag, Text, toast, type BottomSheetRef } from '@/components/ui';
 import { RatingSummary, ReviewCard, ServiceRow, StaffCard } from '@/components/shared';
-import { useAdminBookingsByDay, useAdminDeleteCompany, useAdminPerformance, useAdminSetCompanyActive, useCategories, useCompany, useCompanyReviews, useProducts, useServices, useStaff } from '@/data/hooks';
+import { useAdminBookingsByDay, useAdminDeleteCompany, useAdminPerformance, useAdminResendInvitation, useAdminSetCompanyActive, useCategories, useCompany, useCompanyReviews, useProducts, useServices, useStaff } from '@/data/hooks';
 import type { Weekday } from '@/domain/types';
 import { useI18n, type TKey } from '@/i18n';
 import { buildTelUrl, buildWhatsAppUrl, formatPhone } from '@/lib/phone';
@@ -45,6 +45,8 @@ export const AdminCompanyDetail = () => {
   const setActive = useAdminSetCompanyActive();
   const deleteCompany = useAdminDeleteCompany();
   const deleteRef = useRef<BottomSheetRef>(null);
+  const resendInvite = useAdminResendInvitation();
+  const resendRef = useRef<BottomSheetRef>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [date, setDate] = useState(todayStr());
   const dayBookings = useAdminBookingsByDay(date);
@@ -134,26 +136,6 @@ export const AdminCompanyDetail = () => {
               <Button label={t('company.whatsapp')} variant="soft" size="sm" leftIcon="message-circle-more" onPress={() => Linking.openURL(buildWhatsAppUrl(c.whatsapp ?? c.phone, '')).catch(() => undefined)} />
             </View>
             <Button label={t('ad.company.delete')} variant="danger" size="sm" leftIcon="trash-2" loading={deleteCompany.isPending} onPress={() => deleteRef.current?.open()} style={{ alignSelf: 'flex-start' }} />
-            <BottomSheet ref={deleteRef}>
-              <ConfirmContent
-                title={t('ad.company.deleteTitle')}
-                body={t('ad.company.deleteBody')}
-                confirmLabel={t('common.delete')}
-                cancelLabel={t('common.cancel')}
-                danger
-                onCancel={() => deleteRef.current?.close()}
-                onConfirm={async () => {
-                  deleteRef.current?.close();
-                  try {
-                    await deleteCompany.mutateAsync(c.id);
-                    toast.success(t('ad.company.deleted'));
-                    router.replace('/(admin)/(tabs)/companies' as never);
-                  } catch {
-                    toast.error(t('common.error'));
-                  }
-                }}
-              />
-            </BottomSheet>
             {!c.isActive && !completion.complete ? (
               <Text variant="caption" muted>
                 {t('cw.profile.activeHint')}
@@ -202,6 +184,9 @@ export const AdminCompanyDetail = () => {
                   <Text variant="caption" muted>
                     {t('ad.company.ownerLogin')}
                   </Text>
+                  {c.ownerEmail ? (
+                    <Button label={t('ad.company.resendInvite')} variant="soft" size="sm" leftIcon="mail" loading={resendInvite.isPending} onPress={() => resendRef.current?.open()} style={{ alignSelf: 'flex-start', marginTop: 6 }} />
+                  ) : null}
                 </View>
               </View>
             </Card>
@@ -322,6 +307,45 @@ export const AdminCompanyDetail = () => {
           </>
         ) : null}
       </View>
+      <BottomSheet ref={deleteRef}>
+        <ConfirmContent
+          title={t('ad.company.deleteTitle')}
+          body={t('ad.company.deleteBody')}
+          confirmLabel={t('common.delete')}
+          cancelLabel={t('common.cancel')}
+          danger
+          onCancel={() => deleteRef.current?.close()}
+          onConfirm={async () => {
+            deleteRef.current?.close();
+            try {
+              await deleteCompany.mutateAsync(c.id);
+              toast.success(t('ad.company.deleted'));
+              router.replace('/(admin)/(tabs)/companies' as never);
+            } catch {
+              toast.error(t('common.error'));
+            }
+          }}
+        />
+      </BottomSheet>
+      <BottomSheet ref={resendRef}>
+        <ConfirmContent
+          title={t('ad.company.resendInviteTitle')}
+          body={t('ad.company.resendInviteBody', { email: c.ownerEmail ?? '' })}
+          confirmLabel={t('ad.company.resendInvite')}
+          cancelLabel={t('common.cancel')}
+          onCancel={() => resendRef.current?.close()}
+          onConfirm={async () => {
+            resendRef.current?.close();
+            try {
+              const res = await resendInvite.mutateAsync(c.id);
+              toast.success(t('ad.company.invitationSent', { email: res.email }));
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : '';
+              toast.error(msg === 'NO_EMAIL' ? t('ad.company.noEmail') : msg === 'EMAIL_EXISTS' ? t('ad.form.emailExists') : t('common.error'));
+            }
+          }}
+        />
+      </BottomSheet>
     </Screen>
   );
 };

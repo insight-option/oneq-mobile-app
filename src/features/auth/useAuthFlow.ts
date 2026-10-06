@@ -12,7 +12,12 @@ import { useSessionStore } from '@/store/session';
 import { toast } from '@/components/ui';
 
 export const authErrorMessage = (e: unknown): string => {
-  const code = e instanceof Error ? e.message : String(e);
+  const err = e instanceof Error ? e : null;
+  const message = err?.message ?? String(e);
+  // Amplify errors carry the Cognito exception in `name` (the message is a sentence); repository errors put the code in `message`
+  const code = err && err.name !== 'Error' && /(Exception|Error)$/.test(err.name) ? err.name : message;
+  // a company owner opened the invitation too late: the admin can resend it, phone OTP keeps working meanwhile
+  if (code === 'NotAuthorizedException' && /temporary password has expired/i.test(message)) return t('auth.errors.tempPasswordExpired');
   switch (code) {
     case 'INVALID_CODE':
     case 'CodeMismatchException':
