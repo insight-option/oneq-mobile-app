@@ -1,12 +1,15 @@
 /**
- * Brand fonts on web. Native builds get them from the expo-font config plugin (app.json), which registers the files
- * by their basenames; the browser has no such step, so the same families are loaded here through expo-font
- * (@font-face injection). Text renders with the fallback font until they arrive, then swaps automatically.
+ * Brand fonts outside native builds. Native builds get them from the expo-font config plugin (app.json), which
+ * registers the files by their basenames; the browser and Expo Go have no such step, so the same families are
+ * loaded here through expo-font. Text renders with the fallback font until they arrive, then swaps automatically.
  */
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useFonts } from 'expo-font';
 import { Platform } from 'react-native';
 
-const WEB_FONTS: Record<string, number> = Platform.OS === 'web'
+const NEEDS_RUNTIME_FONTS = Platform.OS === 'web' || Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const RUNTIME_FONTS: Record<string, number> = NEEDS_RUNTIME_FONTS
   ? {
       'IBMPlexSansArabic-Regular': require('../../assets/fonts/IBMPlexSansArabic-Regular.ttf'),
       'IBMPlexSansArabic-Medium': require('../../assets/fonts/IBMPlexSansArabic-Medium.ttf'),
@@ -21,8 +24,8 @@ const WEB_FONTS: Record<string, number> = Platform.OS === 'web'
     }
   : {};
 
-/** Returns true once the web fonts are available (always true on native). */
+/** Returns true once the runtime-loaded fonts are available (always true in native builds). */
 export const useWebFonts = (): boolean => {
-  const [loaded, error] = useFonts(WEB_FONTS);
-  return Platform.OS !== 'web' || loaded || Boolean(error);
+  const [loaded, error] = useFonts(RUNTIME_FONTS);
+  return !NEEDS_RUNTIME_FONTS || loaded || Boolean(error);
 };

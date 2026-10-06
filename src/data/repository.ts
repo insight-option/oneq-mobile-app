@@ -158,6 +158,8 @@ export interface AdminRepo {
   createCompany(input: AdminCreateCompanyInput): Promise<{ company: Company; ownerUsername: string }>;
   updateCompany(id: string, patch: CompanyProfilePatch): Promise<Company>;
   setCompanyActive(id: string, isActive: boolean): Promise<Company>;
+  /** Removes the company, its catalogue and the owner account (bookings are kept for history). */
+  deleteCompany(id: string): Promise<void>;
   upsertCategory(input: UpsertCategoryInput): Promise<Category>;
   deleteCategory(id: string): Promise<void>;
   listBookingsByDay(date: DateString): Promise<Booking[]>;

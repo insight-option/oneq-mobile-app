@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, BottomSheet, ListRow, StatusPill, Text, toast, type BottomSheetRef, type IconName } from '@/components/ui';
@@ -45,11 +45,14 @@ export const WorkspaceHeader = ({ name, avatarUrl, status, menu, menuTitle, dark
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top + 8, backgroundColor: colors.surface, borderBottomColor: colors.line, paddingHorizontal: spacing.gutter }]}>
-      <Pressable onPress={() => sheet.current?.open()} style={[styles.menuBtn, { borderRadius: radii.pill }]} hitSlop={6} accessibilityLabel={menuTitle}>
-        <View style={[styles.menuLine, { backgroundColor: colors.ink }]} />
-        <View style={[styles.menuLine, { backgroundColor: colors.ink, width: 14 }]} />
-        <View style={[styles.menuLine, { backgroundColor: colors.ink }]} />
-      </Pressable>
+      {/* phones reach every entry through the "More" tab; the drawer toggle is a desktop/web affordance */}
+      {Platform.OS === 'web' ? (
+        <Pressable onPress={() => sheet.current?.open()} style={[styles.menuBtn, { borderRadius: radii.pill }]} hitSlop={6} accessibilityLabel={menuTitle}>
+          <View style={[styles.menuLine, { backgroundColor: colors.ink }]} />
+          <View style={[styles.menuLine, { backgroundColor: colors.ink, width: 14 }]} />
+          <View style={[styles.menuLine, { backgroundColor: colors.ink }]} />
+        </Pressable>
+      ) : null}
       <Avatar uri={avatarUrl} name={name} size={36} dark={dark} />
       <Text variant="title" weight="bold" style={{ flex: 1 }} lines={1}>
         {name}

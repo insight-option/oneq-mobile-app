@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AreaChart, Avatar, Button, Card, DateStrip, EmptyState, Header, Icon, IconBubble, KpiCard, PriceTag, ProgressBar, RatingPill, Screen, SegmentedControl, Skeleton, StatusPill, Tag, Text, toast } from '@/components/ui';
+import { AreaChart, Avatar, BottomSheet, Button, Card, ConfirmContent, DateStrip, EmptyState, Header, Icon, IconBubble, KpiCard, PriceTag, ProgressBar, RatingPill, Screen, SegmentedControl, Skeleton, StatusPill, Tag, Text, toast, type BottomSheetRef } from '@/components/ui';
 import { RatingSummary, ReviewCard, ServiceRow, StaffCard } from '@/components/shared';
-import { useAdminBookingsByDay, useAdminPerformance, useAdminSetCompanyActive, useCategories, useCompany, useCompanyReviews, useProducts, useServices, useStaff } from '@/data/hooks';
+import { useAdminBookingsByDay, useAdminDeleteCompany, useAdminPerformance, useAdminSetCompanyActive, useCategories, useCompany, useCompanyReviews, useProducts, useServices, useStaff } from '@/data/hooks';
 import type { Weekday } from '@/domain/types';
 import { useI18n, type TKey } from '@/i18n';
 import { buildTelUrl, buildWhatsAppUrl, formatPhone } from '@/lib/phone';
@@ -43,6 +43,8 @@ export const AdminCompanyDetail = () => {
   const reviews = useCompanyReviews(id);
   const perf = useAdminPerformance('12m');
   const setActive = useAdminSetCompanyActive();
+  const deleteCompany = useAdminDeleteCompany();
+  const deleteRef = useRef<BottomSheetRef>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [date, setDate] = useState(todayStr());
   const dayBookings = useAdminBookingsByDay(date);
@@ -131,6 +133,27 @@ export const AdminCompanyDetail = () => {
               <Button label={t('company.call')} variant="soft" size="sm" leftIcon="phone" onPress={() => Linking.openURL(buildTelUrl(c.phone)).catch(() => undefined)} />
               <Button label={t('company.whatsapp')} variant="soft" size="sm" leftIcon="message-circle-more" onPress={() => Linking.openURL(buildWhatsAppUrl(c.whatsapp ?? c.phone, '')).catch(() => undefined)} />
             </View>
+            <Button label={t('ad.company.delete')} variant="danger" size="sm" leftIcon="trash-2" loading={deleteCompany.isPending} onPress={() => deleteRef.current?.open()} style={{ alignSelf: 'flex-start' }} />
+            <BottomSheet ref={deleteRef}>
+              <ConfirmContent
+                title={t('ad.company.deleteTitle')}
+                body={t('ad.company.deleteBody')}
+                confirmLabel={t('common.delete')}
+                cancelLabel={t('common.cancel')}
+                danger
+                onCancel={() => deleteRef.current?.close()}
+                onConfirm={async () => {
+                  deleteRef.current?.close();
+                  try {
+                    await deleteCompany.mutateAsync(c.id);
+                    toast.success(t('ad.company.deleted'));
+                    router.replace('/(admin)/(tabs)/companies' as never);
+                  } catch {
+                    toast.error(t('common.error'));
+                  }
+                }}
+              />
+            </BottomSheet>
             {!c.isActive && !completion.complete ? (
               <Text variant="caption" muted>
                 {t('cw.profile.activeHint')}

@@ -52,6 +52,9 @@ export const useAuthFlow = () => {
     try {
       return await fn();
     } catch (e) {
+      // keep the raw error reachable in device logs — the toast only shows the mapped message
+      const underlying = (e as { underlyingError?: unknown } | null)?.underlyingError;
+      console.warn('[auth]', e instanceof Error ? `${e.name}: ${e.message}` : e, underlying instanceof Error ? `← ${underlying.name}: ${underlying.message}` : (underlying ?? ''));
       toast.error(authErrorMessage(e));
       return null;
     } finally {

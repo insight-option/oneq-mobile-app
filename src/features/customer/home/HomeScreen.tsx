@@ -1,19 +1,20 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { Carousel, Icon, IconButton, SectionHeader, Skeleton, SkeletonCard, Text, toast } from '@/components/ui';
+import { Carousel, Icon, IconButton, SectionHeader, Skeleton, SkeletonCard, Text, toast, type BottomSheetRef } from '@/components/ui';
 import { CategoryTile, CompanyCard, CompanyListRow, HeroSlideCard, OfferRowCard, heroFromCompany, heroFromOffer, type HeroSlide } from '@/components/shared';
 import { useCategories, useCompanies, useFeatured, useMe, useOffers, usePopular, useToggleFavorite, useTopRated, useUnreadCount } from '@/data/hooks';
 import type { Company } from '@/domain/types';
 import { useI18n } from '@/i18n';
 import { useUserLocation } from '@/lib/location';
+import { greetingKeyByHour } from '@/lib/time';
 import { requireAuth, useSession } from '@/store/session';
 import { useTheme } from '@/theme/ThemeProvider';
 import { brand } from '@/theme/tokens';
-import { GuestBanner } from '@/features/shell/GuestBanner';
+import { LocationSheet } from './LocationSheet';
 
 const CARD_W = 300;
 
@@ -21,9 +22,10 @@ export const HomeScreen = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
-  const { t, localized } = useI18n();
-  const { colors, spacing, radii } = useTheme();
+  const { t, localized, areaName } = useI18n();
+  const { colors, spacing, radii, shadows } = useTheme();
   const session = useSession();
+  const locationRef = useRef<BottomSheetRef>(null);
   const unread = useUnreadCount();
   const categories = useCategories();
   const offers = useOffers(8);
@@ -33,8 +35,9 @@ export const HomeScreen = () => {
   const me = useMe();
   const toggleFavorite = useToggleFavorite();
   // Do not prompt for location on Home; the Map tab requests it. Show the nearest section only once a real fix exists.
-  const { point, isFallback, status } = useUserLocation(false);
-  const hasFix = status === 'granted' && !isFallback;
+  const { point, isFallback, status, manualArea } = useUserLocation(false);
+  const hasFix = (status === 'granted' || status === 'manual') && !isFallback;
+  const locationLabel = manualArea ? areaName(manualArea) : hasFix ? t('home.location.current') : t('home.location');
   const nearest = useCompanies({ near: point, sort: 'nearest', limit: 6 }, { enabled: hasFix });
   const [refreshing, setRefreshing] = useState(false);
 
@@ -94,33 +97,40 @@ export const HomeScreen = () => {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       {/* Header */}
       <LinearGradient colors={[brand.maroonLight, brand.maroon, brand.maroonDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { paddingTop: insets.top + 10, borderBottomStartRadius: radii.sheet, borderBottomEndRadius: radii.sheet }]}>
+        <View pointerEvents="none" style={styles.glowA} />
+        <View pointerEvents="none" style={styles.glowB} />
+        {/* bell · greeting · location — the location pill opens the area picker (nearest-first sections follow it) */}
         <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Pressable onPress={() => router.push('/(customer)/(tabs)/map' as never)} style={styles.locationRow} hitSlop={6}>
-              <Icon name="map-pin" size={14} color="rgba(255,255,255,0.85)" />
-              <Text variant="caption" weight="semibold" color="rgba(255,255,255,0.9)">
-                {t('home.location')}
-              </Text>
-              <Icon name="chevron-down" size={14} color="rgba(255,255,255,0.75)" rtlAware={false} />
-            </Pressable>
-            <Text variant="h1" color="#FFFFFF" lines={1}>
+          <IconButton name="bell" variant="glass" size={44} iconSize={20} badge={Boolean(unread.data)} onPress={() => router.push('/(customer)/notifications' as never)} accessibilityLabel={t('notifications.title')} />
+          <View style={styles.greeting}>
+            <Text variant="caption" color="rgba(255,255,255,0.78)" align="center">
+              {t(`cw.greeting.${greetingKeyByHour()}` as 'cw.greeting.morning')}
+            </Text>
+            <Text variant="h2" color="#FFFFFF" lines={1} align="center">
               {t('home.greeting', { name: session?.name ?? t('common.guest') })}
             </Text>
           </View>
-          <IconButton name="bell" variant="glass" size={44} iconSize={20} badge={Boolean(unread.data)} onPress={() => router.push('/(customer)/notifications' as never)} accessibilityLabel={t('notifications.title')} />
+          <Pressable onPress={() => locationRef.current?.open()} style={[styles.locationPill, { borderRadius: radii.pill }]} hitSlop={6} accessibilityLabel={t('home.location.title')}>
+            <Icon name="map-pin" size={14} color="#FFFFFF" />
+            <Text variant="caption" weight="semibold" color="#FFFFFF" lines={1} style={{ maxWidth: 84 }}>
+              {locationLabel}
+            </Text>
+            <Icon name="chevron-down" size={13} color="rgba(255,255,255,0.85)" rtlAware={false} />
+          </Pressable>
         </View>
-        <Pressable onPress={() => router.push('/(customer)/search' as never)} style={[styles.search, { borderRadius: radii.pill }]}>
-          <Icon name="search" size={20} color={colors.faint} />
-          <Text variant="bodySm" color={colors.faint} style={{ flex: 1 }} lines={1}>
+        <Pressable onPress={() => router.push('/(customer)/search' as never)} style={[styles.search, { borderRadius: radii.pill }, shadows.card]}>
+          <Icon name="search" size={18} color={colors.primary} />
+          <Text variant="bodySm" color={colors.muted} style={{ flex: 1 }} lines={1}>
             {t('home.searchPlaceholder')}
           </Text>
+          <View style={[styles.searchKey, { backgroundColor: colors.tint, borderRadius: radii.pill }]}>
+            <Icon name="sparkles" size={14} color={colors.primary} />
+          </View>
         </Pressable>
       </LinearGradient>
+      <LocationSheet ref={locationRef} />
 
-      <View style={{ height: spacing.lg }} />
-      <GuestBanner />
-
-      {/* Hero carousel */}
+      {/* Hero carousel — directly under the search bar */}
       <View style={{ marginTop: spacing.lg }}>
         {slides.length ? (
           <Carousel data={slides} keyExtractor={(s) => s.id} height={210} renderItem={({ item }) => <HeroSlideCard slide={item} ctaLabel={t('home.hero.cta')} onPress={() => router.push(`/(customer)/company/${item.companyId}` as never)} />} />
@@ -138,7 +148,7 @@ export const HomeScreen = () => {
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} height={118} radius={radii.card} style={{ width: '31%' }} />)
             : (categories.data ?? []).map((cat) => (
-                <CategoryTile key={cat.id} label={localized(cat.name)} icon={cat.icon} color={cat.color} onPress={() => router.push(`/(customer)/category/${cat.id}` as never)} style={{ width: '31%', flex: undefined }} />
+                <CategoryTile key={cat.id} label={localized(cat.name)} icon={cat.icon} color={cat.color} onPress={() => router.push(`/(customer)/category/${cat.id}` as never)} style={styles.tile} />
               ))}
         </View>
       </View>
@@ -189,9 +199,15 @@ export const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 16, paddingBottom: 22, gap: 16 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', height: 52, paddingHorizontal: 18 },
+  header: { paddingHorizontal: 16, paddingBottom: 20, gap: 14, overflow: 'hidden' },
+  glowA: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.07)', top: -90, end: -70 },
+  glowB: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(212,168,83,0.16)', bottom: -60, start: -30 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  greeting: { flex: 1, alignItems: 'center', gap: 2 },
+  locationPill: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingHorizontal: 11, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', height: 46, paddingStart: 16, paddingEnd: 6 },
+  searchKey: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start' },
+  // three per row on every platform: explicit basis, no grow (CSS `flex: 1` would pull all tiles into one row)
+  tile: { width: '31%', flexGrow: 0, flexShrink: 0, flexBasis: '31%' },
 });

@@ -5,25 +5,40 @@ import * as Location from 'expo-location';
 import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
 import type { GeoPoint } from '@/domain/types';
+import { AREA_CENTERS } from '@/i18n/areas';
 import { DOHA_CENTER } from '@/theme/tokens';
 
-export type LocationStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable';
+export type LocationStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable' | 'manual';
 
 interface LocationState {
   status: LocationStatus;
   point: GeoPoint | null;
   /** true when `point` is the Doha fallback rather than a real fix */
   isFallback: boolean;
+  /** area key chosen from the home header; overrides GPS until cleared */
+  manualArea: string | null;
   updatedAt: number | null;
   set: (patch: Partial<LocationState>) => void;
+  /** pick an area as "my location" (null = back to GPS) */
+  setManualArea: (key: string | null) => void;
 }
 
 export const useLocationStore = create<LocationState>((set) => ({
   status: 'idle',
   point: null,
   isFallback: true,
+  manualArea: null,
   updatedAt: null,
   set: (patch) => set(patch),
+  setManualArea: (key) => {
+    const center = key ? AREA_CENTERS[key] : undefined;
+    if (key && center) {
+      set({ manualArea: key, point: { ...center }, isFallback: false, status: 'manual', updatedAt: Date.now() });
+      return;
+    }
+    set({ manualArea: null, status: 'idle', point: null, isFallback: true, updatedAt: null });
+    void resolveUserLocation({ force: true });
+  },
 }));
 
 let inFlight: Promise<GeoPoint> | null = null;
@@ -49,6 +64,8 @@ const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
  */
 export const resolveUserLocation = async (opts?: { force?: boolean }): Promise<GeoPoint> => {
   const state = useLocationStore.getState();
+  // a manually chosen area wins over GPS until the user switches back
+  if (state.manualArea && state.point) return state.point;
   if (!opts?.force && state.point && !state.isFallback && state.updatedAt && Date.now() - state.updatedAt < 2 * 60 * 1000) {
     return state.point;
   }
@@ -99,9 +116,10 @@ export const useUserLocation = (auto = true) => {
   const status = useLocationStore((s) => s.status);
   const point = useLocationStore((s) => s.point);
   const isFallback = useLocationStore((s) => s.isFallback);
+  const manualArea = useLocationStore((s) => s.manualArea);
   const refresh = useCallback((force = false) => resolveUserLocation({ force }), []);
   useEffect(() => {
     if (auto) void resolveUserLocation();
   }, [auto]);
-  return { status, point: point ?? DOHA_CENTER, isFallback, loading: status === 'requesting', refresh };
+  return { status, point: point ?? DOHA_CENTER, isFallback, manualArea, loading: status === 'requesting', refresh };
 };

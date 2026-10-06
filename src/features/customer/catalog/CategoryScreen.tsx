@@ -104,7 +104,7 @@ export const CategoryScreen = () => {
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  tile: { width: '31%', flex: undefined },
+  tile: { width: '31%', flexGrow: 0, flexShrink: 0, flexBasis: '31%' },
   chips: { gap: 8 },
   audienceRow: { flexDirection: 'row', gap: 12 },
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { haptic } from '@/lib/haptics';
-import { Icon, IconBubble, Text, type IconName } from '@/components/ui';
+import { CategoryGlyph, Icon, Text, type IconName } from '@/components/ui';
 
 export interface CategoryTileProps {
   label: string;
@@ -14,9 +14,7 @@ export interface CategoryTileProps {
   size?: 'md' | 'lg';
 }
 
-const tintOf = (hex: string) => `${hex}1F`;
-
-/** Link-1 category tile: white card, colored icon bubble, label. Selected variant is solid maroon ("الكل"). */
+/** Link-1 category tile: white card, gradient duotone glyph, label. Selected variant is solid maroon ("الكل"). */
 export const CategoryTile = React.memo(function CategoryTile({ label, icon, color, onPress, selected, style, size = 'md' }: CategoryTileProps) {
   const { colors, radii, shadows } = useTheme();
   const accent = color ?? colors.primary;
@@ -32,7 +30,7 @@ export const CategoryTile = React.memo(function CategoryTile({ label, icon, colo
         selected ? null : shadows.card,
         style,
       ]}>
-      <IconBubble name={icon as IconName} size={size === 'lg' ? 60 : 54} color={selected ? '#FFFFFF' : accent} background={selected ? 'rgba(255,255,255,0.18)' : tintOf(accent)} />
+      <CategoryGlyph name={icon} color={accent} size={size === 'lg' ? 60 : 54} selected={selected} />
       <Text variant="bodySm" weight="semibold" align="center" color={selected ? '#FFFFFF' : colors.ink} lines={2}>
         {label}
       </Text>
@@ -62,6 +60,7 @@ export const HeroTile = ({ children, style }: { children: React.ReactNode; style
 };
 
 const styles = StyleSheet.create({
-  tile: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 8, borderWidth: StyleSheet.hairlineWidth },
+  // the parent grid sets the width (CSS `flex: 1` would pull every tile of a wrapping row onto one line on web)
+  tile: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 8, borderWidth: StyleSheet.hairlineWidth },
   audience: { flex: 1, height: 150, alignItems: 'center', justifyContent: 'center', gap: 12 },
 });

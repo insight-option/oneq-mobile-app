@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BottomSheet, Button, Card, CATEGORY_ICON_CHOICES, ConfirmContent, EmptyState, FAB, Header, Icon, IconBubble, Input, isIconName, Screen, Select, Skeleton, SkeletonList, Switch, Tag, Text, TextArea, toast, type BottomSheetRef, type IconName } from '@/components/ui';
+import { BottomSheet, Button, Card, CategoryGlyph, CATEGORY_ICON_CHOICES, ConfirmContent, EmptyState, FAB, Header, Icon, Input, isIconName, Screen, Select, Skeleton, SkeletonList, Switch, Tag, Text, TextArea, toast, type BottomSheetRef, type IconName } from '@/components/ui';
 import { repo } from '@/data';
 import { useAdminCategories, useAdminDeleteCategory, useAdminUpsertCategory } from '@/data/hooks';
 import type { Category } from '@/domain/types';
@@ -35,7 +35,7 @@ export const AdminCategoriesScreen = () => {
         {categories.isLoading ? <SkeletonList rows={4} /> : null}
         {(categories.data ?? []).map((c) => (
           <Card key={c.id} padding={spacing.md} onPress={() => router.push(`/(admin)/category/${c.id}` as never)} style={styles.row}>
-            <IconBubble name={iconOf(c.icon)} size={48} iconSize={22} color={c.color} background={`${c.color}1F`} />
+            <CategoryGlyph name={iconOf(c.icon)} size={48} color={c.color} />
             <View style={{ flex: 1, gap: 2 }}>
               <View style={styles.row}>
                 <Text variant="title" weight="bold" lines={1} style={{ flex: 1 }}>

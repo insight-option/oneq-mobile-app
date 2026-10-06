@@ -1187,6 +1187,17 @@ export const createMockRepository = (): OneQRepository => {
         save();
         return clone(c);
       },
+      async deleteCompany(id) {
+        await delay();
+        const c = companyById(id);
+        if (!c) throw new Error('NOT_FOUND');
+        state.companies = state.companies.filter((x) => x.id !== id);
+        state.services = state.services.filter((x) => x.companyId !== id);
+        state.products = state.products.filter((x) => x.companyId !== id);
+        state.staff = state.staff.filter((x) => x.companyId !== id);
+        state.users = state.users.filter((u) => u.id !== c.ownerUserId);
+        save();
+      },
       async setCompanyActive(id, isActive) {
         await delay();
         const c = companyById(id);

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { WEB_INPUT_RESET } from '@/lib/layout';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/tokens';
@@ -36,6 +37,7 @@ export const OtpInput = ({ length = 6, value, onChange, onComplete, error, autoF
               key={i}
               style={[
                 styles.box,
+                WEB_INPUT_RESET,
                 {
                   borderColor: error ? colors.danger : active ? colors.primary : ch ? colors.lineStrong : colors.line,
                   backgroundColor: ch ? colors.surface : colors.surfaceAlt,

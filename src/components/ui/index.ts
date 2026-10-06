@@ -12,6 +12,7 @@ export { Chip } from './Chip';
 export { SegmentedControl } from './SegmentedControl';
 export type { SegmentOption } from './SegmentedControl';
 export { Divider, Spacer, Row, SectionHeader, IconBubble } from './basics';
+export { CategoryGlyph } from './CategoryGlyph';
 export { Input, TextArea } from './Input';
 export { PhoneInput } from './PhoneInput';
 export { OtpInput } from './OtpInput';

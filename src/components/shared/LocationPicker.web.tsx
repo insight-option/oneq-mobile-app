@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View, type StyleProp, type ViewStyle } from 'rea
 import { Button, Text } from '@/components/ui';
 import type { GeoPoint } from '@/domain/types';
 import { useI18n } from '@/i18n';
+import { WEB_INPUT_RESET } from '@/lib/layout';
 import { resolveUserLocation } from '@/lib/location';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { LocationPickerProps } from './LocationPicker';
@@ -48,7 +49,7 @@ export const LocationPicker = ({ value, onChange, height = 260, useMineLabel, st
     }
   };
 
-  const inputStyle = { color: colors.ink, borderColor: colors.line, borderRadius: radii.input, backgroundColor: colors.surface, paddingHorizontal: spacing.md };
+  const inputStyle = { ...(WEB_INPUT_RESET ?? {}), color: colors.ink, borderColor: colors.line, borderRadius: radii.input, backgroundColor: colors.surface, paddingHorizontal: spacing.md };
   return (
     <View style={[{ gap: spacing.sm }, style]}>
       <View style={{ height, borderRadius: radii.card, overflow: 'hidden', backgroundColor: colors.surfaceAlt }}>

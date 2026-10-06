@@ -53,7 +53,7 @@ export const notifyCompany = async (client: DataClient, company: { ownerUserId?:
   await notifyUser(client, company.ownerUserId, input, 'COMPANY');
 };
 
-export type ActivityAction = 'SERVICE_CREATED' | 'SERVICE_UPDATED' | 'PRODUCT_CREATED' | 'PRODUCT_UPDATED' | 'OFFER_SET' | 'OFFER_REMOVED' | 'STAFF_CREATED' | 'STAFF_UPDATED' | 'PROFILE_UPDATED' | 'COMPANY_CREATED' | 'CATEGORY_CREATED';
+export type ActivityAction = 'SERVICE_CREATED' | 'SERVICE_UPDATED' | 'PRODUCT_CREATED' | 'PRODUCT_UPDATED' | 'OFFER_SET' | 'OFFER_REMOVED' | 'STAFF_CREATED' | 'STAFF_UPDATED' | 'PROFILE_UPDATED' | 'COMPANY_CREATED' | 'COMPANY_DELETED' | 'CATEGORY_CREATED';
 
 /** Appends to the admin activity feed (single partition "ALL", sorted by time). */
 export const logActivity = async (client: DataClient, input: { actorId: string; actorName: string; companyId?: string | null; companyName?: LocalizedText | null; action: ActivityAction; summary: LocalizedText }) => {

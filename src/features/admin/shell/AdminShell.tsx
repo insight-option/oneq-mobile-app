@@ -41,6 +41,7 @@ const ACTIVITY_ICON: Record<ActivityLog['action'], IconName> = {
   STAFF_UPDATED: 'user',
   PROFILE_UPDATED: 'briefcase',
   COMPANY_CREATED: 'building-2',
+  COMPANY_DELETED: 'x',
   CATEGORY_CREATED: 'tags',
 };
 

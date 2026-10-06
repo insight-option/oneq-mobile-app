@@ -7,6 +7,7 @@ import { Avatar, Chip, EmptyState, Icon, IconButton, Screen, SectionHeader, Skel
 import { CompanyListRow } from '@/components/shared';
 import { useSearch } from '@/data/hooks';
 import { useI18n, type TKey } from '@/i18n';
+import { WEB_INPUT_RESET } from '@/lib/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { resolveFont } from '@/theme/typography';
 import { useLocaleStore } from '@/store/locale';
@@ -62,7 +63,7 @@ export const SearchScreen = () => {
         </View>
         <View style={[styles.field, { backgroundColor: colors.surfaceAlt, borderRadius: radii.pill, borderColor: colors.line }]}>
           <Icon name="search" size={20} color={colors.faint} />
-          <TextInput ref={inputRef} value={input} onChangeText={setInput} placeholder={t('search.placeholder')} placeholderTextColor={colors.faint} autoFocus returnKeyType="search" onSubmitEditing={() => input.trim() && commit(input.trim())} style={[styles.input, { color: colors.ink, fontFamily: resolveFont(lang, 'regular') }]} allowFontScaling={false} />
+          <TextInput ref={inputRef} value={input} onChangeText={setInput} placeholder={t('search.placeholder')} placeholderTextColor={colors.faint} autoFocus returnKeyType="search" onSubmitEditing={() => input.trim() && commit(input.trim())} style={[styles.input, WEB_INPUT_RESET, { color: colors.ink, fontFamily: resolveFont(lang, 'regular') }]} allowFontScaling={false} />
           {input ? (
             <Pressable onPress={() => setInput('')} hitSlop={8}>
               <Icon name="circle-x" size={18} color={colors.faint} />

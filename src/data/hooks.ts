@@ -417,6 +417,17 @@ export const useAdminUpsertCategory = () => {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (input: UpsertCategoryInput) => repo.admin.upsertCategory(input), onSuccess: () => invalidateAdmin(qc) });
 };
+export const useAdminDeleteCompany = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repo.admin.deleteCompany(id),
+    onSuccess: (_r, id) => {
+      qc.removeQueries({ queryKey: k.company(id) });
+      invalidateAdmin(qc);
+      qc.invalidateQueries({ queryKey: ['companies'] });
+    },
+  });
+};
 export const useAdminDeleteCategory = () => {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => repo.admin.deleteCategory(id), onSuccess: () => invalidateAdmin(qc) });

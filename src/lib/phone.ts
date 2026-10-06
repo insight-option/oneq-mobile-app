@@ -48,7 +48,8 @@ export function formatPhone(input: string | null | undefined): string {
   const normalized = normalizeQatarPhone(input);
   if (!normalized) return input.trim();
   const local = normalized.slice(QATAR_COUNTRY_CODE.length);
-  return `${QATAR_COUNTRY_CODE} ${local.slice(0, 4)} ${local.slice(4)}`;
+  // LRE … PDF keep the "+974 5000 0001" run left-to-right when it sits inside Arabic (RTL) text
+  return `‪${QATAR_COUNTRY_CODE} ${local.slice(0, 4)} ${local.slice(4)}‬`;
 }
 
 /** `+974 •••• 0003` for OTP destinations. */

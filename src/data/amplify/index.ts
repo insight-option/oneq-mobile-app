@@ -4,6 +4,7 @@
  * to the domain model, applies read-side filters/sorts and keeps the guest/user auth modes straight.
  */
 import { autoSignIn, confirmResetPassword, confirmSignIn, confirmSignUp, fetchAuthSession, resendSignUpCode, resetPassword, signIn, signOut as amplifySignOut, signUp } from 'aws-amplify/auth';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { generateClient } from 'aws-amplify/data';
 import { getUrl, uploadData } from 'aws-amplify/storage';
 import { Hub } from 'aws-amplify/utils';
@@ -50,6 +51,9 @@ import { addDays, DEFAULT_HOURS, isOpenNow, todayStr } from '@/lib/time';
 import type { OneQRepository } from '../repository';
 
 /* ---------- row helpers ---------- */
+/** Expo Go bundles no @aws-amplify/react-native module: password sign-in must avoid the native SRP path there */
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
 type Row = Record<string, unknown>;
 const s = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
 const sn = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
@@ -466,13 +470,25 @@ export const createAmplifyRepository = (): OneQRepository => {
   const parse = <T>(v: unknown): T => json<T>(v, v as T);
 
   /* ----- session ----- */
+  const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  /** Human name for the session: `name` → given/family name → email local part → phone. Never the Cognito username (a UUID for email/phone pools). */
+  const displayNameOf = (p: Record<string, unknown>): string => {
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const name = str(p.name);
+    if (name && !UUID_LIKE.test(name)) return name;
+    const given = [str(p.given_name), str(p.family_name)].filter(Boolean).join(' ');
+    if (given) return given;
+    const email = str(p.email);
+    if (email.includes('@')) return email.split('@')[0];
+    return str(p.phone_number) || 'OneQ';
+  };
   const buildSession = async (): Promise<SessionInfo | null> => {
     const auth = await fetchAuthSession();
     const payload = auth.tokens?.idToken?.payload;
     if (!payload || typeof payload.sub !== 'string') return null;
     const groups = Array.isArray(payload['cognito:groups']) ? (payload['cognito:groups'] as string[]) : [];
     const role: SessionInfo['role'] = groups.includes('ADMINS') ? 'admin' : groups.includes('COMPANIES') ? 'company' : 'customer';
-    const info: SessionInfo = { userId: payload.sub, role, name: typeof payload.name === 'string' ? payload.name : s(payload['cognito:username'], 'OneQ'), phone: sn(payload.phone_number), email: sn(payload.email), companyId: null, groups };
+    const info: SessionInfo = { userId: payload.sub, role, name: displayNameOf(payload as Record<string, unknown>), phone: sn(payload.phone_number), email: sn(payload.email), companyId: null, groups };
     session = info;
     if (role === 'company') {
       const res = await api().models.Company.listCompaniesByOwner({ ownerUserId: info.userId }, { authMode: 'userPool', limit: 1 });
@@ -484,7 +500,13 @@ export const createAmplifyRepository = (): OneQRepository => {
   /** Admins are created outside the app (console / seed script); make sure they have a profile row. */
   const ensureProfile = async (info: SessionInfo) => {
     const res = await api().models.UserProfile.get({ id: info.userId }, { authMode: 'userPool' });
-    if (res.data) return;
+    if (res.data) {
+      // profiles created before the display-name fix carry the Cognito username (a UUID); repair them once
+      if (UUID_LIKE.test(String(res.data.name ?? '')) && !UUID_LIKE.test(info.name)) {
+        await api().models.UserProfile.update({ id: info.userId, name: info.name }, { authMode: 'userPool' }).catch(() => undefined);
+      }
+      return;
+    }
     await api().models.UserProfile.create({ id: info.userId, owner: info.userId, role: info.role, name: info.name, phone: info.phone ?? null, phoneKey: info.phone ? normalizeQatarPhone(info.phone) : null, email: info.email ?? null, avatarUrl: null, language: lang, favorites: [], addresses: jsonOut([]), companyId: info.companyId ?? null }, { authMode: 'userPool' });
   };
   const finishSignIn = async (): Promise<SessionInfo> => {
@@ -656,15 +678,18 @@ export const createAmplifyRepository = (): OneQRepository => {
           return { step: 'DONE', session: await finishSignIn() };
         }
         const { nextStep } = await confirmSignIn({ challengeResponse: code });
-        if (nextStep.signInStep !== 'DONE') throw new Error(`UNSUPPORTED_STEP_${nextStep.signInStep}`);
         pending = null;
+        if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') return { step: 'NEW_PASSWORD', destination: '' };
+        if (nextStep.signInStep !== 'DONE') throw new Error(`UNSUPPORTED_STEP_${nextStep.signInStep}`);
         return { step: 'DONE', session: await finishSignIn() };
       },
       async resendOtp() {
         if (pending?.kind === 'signup') await resendSignUpCode({ username: pending.username });
       },
       async signInWithEmail(email, password) {
-        const { nextStep } = await signIn({ username: email.trim().toLowerCase(), password });
+        // Expo Go has no @aws-amplify/react-native native module, so the default SRP flow cannot compute its proof there;
+        // the choice-based USER_AUTH flow with the plain PASSWORD challenge needs no native code (TLS still protects it).
+        const { nextStep } = await signIn({ username: email.trim().toLowerCase(), password, options: isExpoGo ? { authFlowType: 'USER_AUTH', preferredChallenge: 'PASSWORD' } : undefined });
         if (nextStep.signInStep === 'DONE') return { step: 'DONE', session: await finishSignIn() };
         if (nextStep.signInStep === 'CONFIRM_SIGN_UP') throw new Error('USER_NOT_CONFIRMED');
         // users created in the Cognito console / with AdminCreateUser hold a temporary password until they set their own
@@ -681,7 +706,7 @@ export const createAmplifyRepository = (): OneQRepository => {
         const phone = normalizeQatarPhone(phoneInput);
         if (!phone) throw new Error('INVALID_PHONE');
         const username = email.trim().toLowerCase();
-        const { nextStep } = await signUp({ username, password, options: { userAttributes: { email: username, name: name.trim(), phone_number: phone }, autoSignIn: true } });
+        const { nextStep } = await signUp({ username, password, options: { userAttributes: { email: username, name: name.trim(), phone_number: phone }, autoSignIn: isExpoGo ? { authFlowType: 'USER_AUTH' } : true } });
         if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
           pending = { kind: 'signup', username };
           return { step: 'OTP', destination: nextStep.codeDeliveryDetails?.destination ?? username };
@@ -1207,6 +1232,10 @@ export const createAmplifyRepository = (): OneQRepository => {
         const res = ok(await api().models.Company.update({ id, ...patch, logoUrl: patch.logoUrl === undefined ? undefined : toStoragePath(patch.logoUrl), coverUrl: patch.coverUrl === undefined ? undefined : toStoragePath(patch.coverUrl), galleryUrls: patch.galleryUrls === undefined ? undefined : toStoragePaths(patch.galleryUrls), openingHours: patch.openingHours === undefined ? undefined : jsonOut(patch.openingHours) }, { authMode: 'userPool' }), 'company');
         companiesCache = null;
         return toCompany(res.data as unknown as Row);
+      },
+      async deleteCompany(id) {
+        ok(await api().mutations.adminDeleteCompany({ companyId: id }, { authMode: 'userPool' }), 'company');
+        companiesCache = null;
       },
       async setCompanyActive(id, isActive) {
         const res = ok(await api().models.Company.update({ id, isActive }, { authMode: 'userPool' }), 'company');

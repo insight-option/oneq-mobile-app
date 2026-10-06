@@ -9,6 +9,12 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#5A0020",
     "newArchEnabled": true,
+    "updates": {
+      "url": "https://u.expo.dev/d5503d5b-5dca-458b-9b21-72b2e99c2b54"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "primaryColor": "#5A0020",
     "ios": {
       "supportsTablet": false,

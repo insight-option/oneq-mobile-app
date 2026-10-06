@@ -61,3 +61,28 @@ backend.auth.resources.cfnResources.cfnUserPool.schema = [
   { name: 'phone_number', attributeDataType: 'String', mutable: true, required: false },
   { name: 'name', attributeDataType: 'String', mutable: true, required: false },
 ];
+
+/*
+ * Cognito: invitation sent to company owners created from the admin workspace (AdminCreateUser with an e-mail).
+ * `{username}` is the owner's phone number (the Cognito username) and `{####}` the temporary password; both
+ * placeholders are mandatory. Self sign-up must stay enabled (customers register themselves).
+ */
+backend.auth.resources.cfnResources.cfnUserPool.adminCreateUserConfig = {
+  allowAdminCreateUserOnly: false,
+  inviteMessageTemplate: {
+    emailSubject: 'OneQ — بيانات دخول شركتك | Your OneQ company account',
+    emailMessage: [
+      '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.8">',
+      '<p>أهلاً بك في <b>OneQ</b> — تم إنشاء حساب شركتك.</p>',
+      '<p>اسم المستخدم (رقم الجوال): <b dir="ltr">{username}</b><br/>كلمة المرور المؤقتة: <b dir="ltr">{####}</b></p>',
+      '<p>سجّل الدخول من التطبيق ببريدك الإلكتروني وكلمة المرور المؤقتة ثم اختر كلمة مرور جديدة، أو ادخل برقم جوالك عبر رمز التحقق.</p>',
+      '</div>',
+      '<div dir="ltr" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#444;margin-top:16px">',
+      '<p>Welcome to <b>OneQ</b> — your company account is ready.</p>',
+      '<p>Username (phone number): <b>{username}</b><br/>Temporary password: <b>{####}</b></p>',
+      '<p>Sign in with your e-mail and this temporary password (you will choose a new one), or with your phone number and the SMS code.</p>',
+      '</div>',
+    ].join(''),
+    smsMessage: 'OneQ: اسم المستخدم {username} وكلمة المرور المؤقتة {####}',
+  },
+};

@@ -34,7 +34,7 @@ export const Text = React.memo(function Text({ variant = 'body', color, weight, 
       {...rest}
       numberOfLines={lines}
       allowFontScaling={false}
-      style={[textStyle(variant, lang, { weight, numeric }), styles.base, { color: resolvedColor, textAlign: alignMap(align) }, style]}>
+      style={[textStyle(variant, lang, { weight, numeric }), styles.base, numeric && styles.numeric, { color: resolvedColor, textAlign: alignMap(align) }, style]}>
       {children}
     </RNText>
   );
@@ -42,4 +42,6 @@ export const Text = React.memo(function Text({ variant = 'body', color, weight, 
 
 const styles = StyleSheet.create({
   base: { writingDirection: isRTL ? 'rtl' : 'ltr' },
+  // numbers, phone numbers and codes read left-to-right even inside Arabic layouts
+  numeric: { writingDirection: 'ltr' },
 });

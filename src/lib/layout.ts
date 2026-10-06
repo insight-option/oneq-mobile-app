@@ -13,3 +13,9 @@ export const appWidth = (): number => clamp(Dimensions.get('window').width);
 
 /** reactive read (re-renders on rotation / browser resize) */
 export const useAppWidth = (): number => clamp(useWindowDimensions().width);
+
+/**
+ * Browsers draw their own focus ring around text inputs (a square blue outline) on top of our styled field;
+ * add this to every TextInput style array. No-op on native.
+ */
+export const WEB_INPUT_RESET = Platform.OS === 'web' ? ({ outlineStyle: 'none', outlineWidth: 0 } as object) : null;

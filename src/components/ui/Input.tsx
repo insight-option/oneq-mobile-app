@@ -1,6 +1,7 @@
 import React, { forwardRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { isRTL } from '@/lib/rtl';
+import { WEB_INPUT_RESET } from '@/lib/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { resolveFont } from '@/theme/typography';
 import { useLocaleStore } from '@/store/locale';
@@ -90,6 +91,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           }}
           style={[
             styles.input,
+            WEB_INPUT_RESET,
             {
               fontFamily: resolveFont(lang, 'regular', { numeric }),
               color: colors.ink,

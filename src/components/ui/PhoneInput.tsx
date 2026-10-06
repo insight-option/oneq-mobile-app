@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { WEB_INPUT_RESET } from '@/lib/layout';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fonts } from '@/theme/tokens';
@@ -54,7 +55,7 @@ export const PhoneInput = ({ value, onChange, label, error, autoFocus, placehold
             onSubmitEditing={onSubmit}
             returnKeyType="done"
             allowFontScaling={false}
-            style={[styles.input, { color: colors.ink, fontFamily: fonts.latin.semibold }]}
+            style={[styles.input, WEB_INPUT_RESET, { color: colors.ink, fontFamily: fonts.latin.semibold }]}
           />
         </View>
       </View>

@@ -145,6 +145,11 @@ export const OtpScreen = () => {
       setCode('');
       return;
     }
+    // admin-created owners may still hold their temporary password after the SMS code
+    if (step.step === 'NEW_PASSWORD') {
+      router.replace({ pathname: '/(auth)/new-password', params: { email: step.destination } });
+      return;
+    }
     if (!land(step)) setError(true);
   };
 
