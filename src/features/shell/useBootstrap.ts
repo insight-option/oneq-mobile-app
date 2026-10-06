@@ -15,6 +15,8 @@ import { useSessionStore } from '@/store/session';
 
 export const ONBOARDED_KEY = 'oneq.onboarded.v1';
 export const GUEST_KEY = 'oneq.guest.v1';
+/** direction for which a one-time reload was already attempted ('rtl' | 'ltr') */
+export const RTL_RELOAD_KEY = 'oneq.rtlReload.v1';
 
 export const useBootstrap = () => {
   const started = useRef(false);
@@ -33,9 +35,13 @@ export const useBootstrap = () => {
           // in development a JS reload is not enough, so we continue in the current direction and apply it on the next launch).
           I18nManager.allowRTL(shouldBeRTL);
           I18nManager.forceRTL(shouldBeRTL);
-          const g = globalThis as unknown as { __oneqRtlReloadTried?: boolean };
-          if (!g.__oneqRtlReloadTried && !__DEV__) {
-            g.__oneqRtlReloadTried = true;
+          // The "already tried" marker must survive the reload itself: a JS reload does not re-read the native flag
+          // everywhere (Expo Go applies it only on its next process start), and a globalThis flag resets with the
+          // JS context — that combination produced an endless reload loop.
+          const wanted = shouldBeRTL ? 'rtl' : 'ltr';
+          const tried = await AsyncStorage.getItem(RTL_RELOAD_KEY).catch(() => null);
+          if (tried !== wanted && !__DEV__) {
+            await AsyncStorage.setItem(RTL_RELOAD_KEY, wanted).catch(() => undefined);
             await reloadApp();
           }
         }

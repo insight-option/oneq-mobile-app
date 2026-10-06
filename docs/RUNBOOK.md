@@ -157,6 +157,13 @@ a stub): the persisted language sets `<html dir>` plus the root `View`'s `dir`, 
 page. Brand fonts are loaded through `src/lib/webFonts.ts` (the expo-font plugin only embeds them natively).
 Local check: `npx expo export --platform web --output-dir dist` then serve `dist/` (or `npx expo start --web`).
 
+The branch backend can also be deployed from a developer machine (same operation the pipeline runs), which writes the
+**production** `amplify_outputs.json` into the project root:
+
+```powershell
+$env:CI='1'; $env:AWS_PROFILE='oneq'; npx ampx pipeline-deploy --branch main --app-id d3rw7vgtsyn0ne
+```
+
 After the first successful build, from a machine with credentials for the **production** account:
 
 ```powershell

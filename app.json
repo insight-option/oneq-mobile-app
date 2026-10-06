@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "OneQ",
-    "slug": "oneQ-app",
+    "slug": "oneq",
     "scheme": "oneq",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -125,6 +125,7 @@
       "eas": {
         "projectId": "d5503d5b-5dca-458b-9b21-72b2e99c2b54"
       }
-    }
+    },
+    "owner": "oneq-org"
   }
 }

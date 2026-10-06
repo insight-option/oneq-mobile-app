@@ -44,6 +44,8 @@ try {
       UserPoolId: pool,
       Username: adminEmail,
       MessageAction: 'SUPPRESS',
+      // pools with choice-based sign-in refuse e-mail-only users without a password; the permanent one is set right after
+      TemporaryPassword: adminPassword,
       UserAttributes: [
         { Name: 'email', Value: adminEmail },
         { Name: 'email_verified', Value: 'true' },
