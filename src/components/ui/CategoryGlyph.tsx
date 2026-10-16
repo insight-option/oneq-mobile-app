@@ -1,97 +1,78 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import type { IconProps as PhosphorProps } from 'phosphor-react-native';
-import { BabyIcon } from 'phosphor-react-native/src/icons/Baby';
-import { BarbellIcon } from 'phosphor-react-native/src/icons/Barbell';
-import { BathtubIcon } from 'phosphor-react-native/src/icons/Bathtub';
-import { BroomIcon } from 'phosphor-react-native/src/icons/Broom';
-import { BuildingsIcon } from 'phosphor-react-native/src/icons/Buildings';
-import { CarIcon } from 'phosphor-react-native/src/icons/Car';
-import { DiamondIcon } from 'phosphor-react-native/src/icons/Diamond';
-import { DropIcon } from 'phosphor-react-native/src/icons/Drop';
-import { EyeIcon } from 'phosphor-react-native/src/icons/Eye';
-import { FirstAidIcon } from 'phosphor-react-native/src/icons/FirstAid';
-import { FlowerIcon } from 'phosphor-react-native/src/icons/Flower';
-import { HairDryerIcon } from 'phosphor-react-native/src/icons/HairDryer';
-import { HammerIcon } from 'phosphor-react-native/src/icons/Hammer';
-import { HeartbeatIcon } from 'phosphor-react-native/src/icons/Heartbeat';
-import { HouseIcon } from 'phosphor-react-native/src/icons/House';
-import { LeafIcon } from 'phosphor-react-native/src/icons/Leaf';
-import { PaintBrushIcon } from 'phosphor-react-native/src/icons/PaintBrush';
-import { PillIcon } from 'phosphor-react-native/src/icons/Pill';
-import { ScissorsIcon } from 'phosphor-react-native/src/icons/Scissors';
-import { SparkleIcon } from 'phosphor-react-native/src/icons/Sparkle';
-import { StethoscopeIcon } from 'phosphor-react-native/src/icons/Stethoscope';
-import { SyringeIcon } from 'phosphor-react-native/src/icons/Syringe';
-import { ToothIcon } from 'phosphor-react-native/src/icons/Tooth';
-import { WrenchIcon } from 'phosphor-react-native/src/icons/Wrench';
-import { Icon, isIconName, type IconName } from './icons';
+import React, { useId } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
+import Svg, { Defs, G, LinearGradient, Path, Stop } from 'react-native-svg';
+import { glyphShape, hasGlyphShape } from './glyphPaths';
 
 /**
- * Category / subcategory glyph: a gradient rounded-square tile with a two-tone (duotone) Phosphor icon, falling back
- * to the regular lucide outline for names without a duotone counterpart. Icons are imported one by one on purpose —
- * the package index would pull every icon into the bundle.
+ * Premium glyphs: two-layer (duotone) artwork drawn with gradient fills and NO background tile — a deep maroon
+ * gradient for the outline and a champagne-gold gradient for the inner layer. Category / subcategory records keep their
+ * lucide-style icon names (admin picker, seed data); glyphPaths.ts maps them to the artwork.
  */
-const DUOTONE: Record<string, React.FC<PhosphorProps>> = {
-  stethoscope: StethoscopeIcon,
-  'heart-pulse': HeartbeatIcon,
-  activity: HeartbeatIcon,
-  dumbbell: BarbellIcon,
-  scissors: ScissorsIcon,
-  house: HouseIcon,
-  'building-2': BuildingsIcon,
-  store: BuildingsIcon,
-  sparkles: SparkleIcon,
-  brush: PaintBrushIcon,
-  paintbrush: PaintBrushIcon,
-  gem: DiamondIcon,
-  eye: EyeIcon,
-  'flower-2': FlowerIcon,
-  bath: BathtubIcon,
-  droplets: DropIcon,
-  waves: DropIcon,
-  baby: BabyIcon,
-  car: CarIcon,
-  wrench: WrenchIcon,
-  hammer: HammerIcon,
-  trees: LeafIcon,
-  syringe: SyringeIcon,
-  pill: PillIcon,
-  smile: ToothIcon,
-  wind: HairDryerIcon,
-  shield: FirstAidIcon,
-  broom: BroomIcon,
+export const hasPremiumGlyph = hasGlyphShape;
+
+/**
+ * brand: maroon outline + champagne-gold layer, for light surfaces (default)
+ * light: ivory outline + warm-gold layer, for maroon surfaces (selected tile, gift card)
+ * gold:  gold outline + ivory layer, for accents on maroon
+ */
+export type GlyphTone = 'brand' | 'light' | 'gold';
+
+const TONES: Record<GlyphTone, { main: [string, string]; layer: [string, string]; layerOpacity: number }> = {
+  brand: { main: ['#9A2549', '#4A0019'], layer: ['#F6DFB0', '#D6A256'], layerOpacity: 0.95 },
+  light: { main: ['#FFFFFF', '#F2E2CC'], layer: ['#F8D894', '#C88A36'], layerOpacity: 0.9 },
+  gold: { main: ['#FBE3AE', '#C8893A'], layer: ['#FFFFFF', '#F6E7D2'], layerOpacity: 0.35 },
 };
 
-/** Mix a hex colour with white (0 = colour, 1 = white) for the light end of the gradient. */
-const lighten = (hex: string, amount: number): string => {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  const ch = (shift: number) => Math.round(((n >> shift) & 0xff) + (255 - ((n >> shift) & 0xff)) * amount);
-  return `#${[16, 8, 0].map((s) => ch(s).toString(16).padStart(2, '0')).join('')}`;
-};
-
-export interface CategoryGlyphProps {
-  name: IconName | string;
-  color: string;
+export interface PremiumGlyphProps {
+  name: string;
   size?: number;
-  /** inverted (translucent white) look on a solid maroon tile */
-  selected?: boolean;
+  tone?: GlyphTone;
+  style?: StyleProp<ViewStyle>;
 }
 
-export const CategoryGlyph = React.memo(function CategoryGlyph({ name, color, size = 54, selected }: CategoryGlyphProps) {
-  const Duo = DUOTONE[name];
-  const iconSize = Math.round(size * 0.52);
-  const gradient: [string, string] = selected ? ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0.12)'] : [lighten(color, 0.22), color];
+export const PremiumGlyph = React.memo(function PremiumGlyph({ name, size = 40, tone = 'brand', style }: PremiumGlyphProps) {
+  // gradient ids must be unique per instance: on web every <svg> shares one DOM id space
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const palette = TONES[tone];
+  const shape = glyphShape(name);
+  const mainId = `gm${uid}`;
+  const layerId = `gl${uid}`;
   return (
-    <LinearGradient colors={gradient} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={[styles.tile, { width: size, height: size, borderRadius: Math.round(size * 0.34) }]}>
-      {Duo ? <Duo size={iconSize} color="#FFFFFF" weight="duotone" duotoneColor="#FFFFFF" duotoneOpacity={0.38} /> : <Icon name={isIconName(name) ? name : 'sparkles'} size={iconSize} color="#FFFFFF" strokeWidth={2} />}
-    </LinearGradient>
+    <Svg width={size} height={size} viewBox="0 0 256 256" style={style}>
+      <Defs>
+        <LinearGradient id={mainId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={palette.main[0]} />
+          <Stop offset="100%" stopColor={palette.main[1]} />
+        </LinearGradient>
+        <LinearGradient id={layerId} x1="10%" y1="0%" x2="90%" y2="100%">
+          <Stop offset="0%" stopColor={palette.layer[0]} />
+          <Stop offset="100%" stopColor={palette.layer[1]} />
+        </LinearGradient>
+      </Defs>
+      <G fill={`url(#${layerId})`} opacity={palette.layerOpacity}>
+        {shape.layer.map((d, i) => (
+          <Path key={`l${i}`} d={d} />
+        ))}
+      </G>
+      <G fill={`url(#${mainId})`}>
+        {shape.main.map((d, i) => (
+          <Path key={`m${i}`} d={d} />
+        ))}
+      </G>
+    </Svg>
   );
 });
 
-const styles = StyleSheet.create({
-  tile: { alignItems: 'center', justifyContent: 'center' },
+export interface CategoryGlyphProps {
+  name: string;
+  /** kept for call-site compatibility: categories still store a colour, glyphs use the brand palette */
+  color?: string;
+  size?: number;
+  /** ivory artwork for a selected (solid maroon) tile */
+  selected?: boolean;
+}
+
+/** Category / subcategory icon without any background tile. */
+export const CategoryGlyph = React.memo(function CategoryGlyph({ name, size = 44, selected }: CategoryGlyphProps) {
+  return <PremiumGlyph name={name} size={size} tone={selected ? 'light' : 'brand'} />;
 });

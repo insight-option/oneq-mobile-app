@@ -35,7 +35,7 @@ export const AdminCategoriesScreen = () => {
         {categories.isLoading ? <SkeletonList rows={4} /> : null}
         {(categories.data ?? []).map((c) => (
           <Card key={c.id} padding={spacing.md} onPress={() => router.push(`/(admin)/category/${c.id}` as never)} style={styles.row}>
-            <CategoryGlyph name={iconOf(c.icon)} size={48} color={c.color} />
+            <CategoryGlyph name={iconOf(c.icon)} size={44} />
             <View style={{ flex: 1, gap: 2 }}>
               <View style={styles.row}>
                 <Text variant="title" weight="bold" lines={1} style={{ flex: 1 }}>
@@ -169,8 +169,11 @@ const AdminCategoryFormBody = ({ isNew, existing, count }: { isNew: boolean; exi
         <Card style={{ gap: spacing.md }}>
           <Pressable onPress={pickImage} style={[styles.imagePick, { backgroundColor: colors.surfaceAlt, borderRadius: radii.md, borderColor: colors.lineStrong }]}>
             {form.imageUrl ? <Image source={{ uri: form.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-            <View style={[styles.preview, { backgroundColor: form.color }]}>
-              <Icon name={form.icon} size={28} color="#FFFFFF" />
+            <View style={[styles.preview, { backgroundColor: colors.surface, borderRadius: radii.card }]}>
+              <CategoryGlyph name={form.icon} size={40} />
+              <Text variant="caption" weight="semibold" lines={1}>
+                {form.nameAr || form.nameEn || t('ad.categories.form.new')}
+              </Text>
             </View>
             <View style={styles.imageLabel}>
               <Icon name="image-plus" size={16} color="#FFFFFF" />
@@ -191,18 +194,8 @@ const AdminCategoryFormBody = ({ isNew, existing, count }: { isNew: boolean; exi
           </Text>
           <View style={styles.wrap}>
             {CATEGORY_ICON_CHOICES.map((i) => (
-              <Pressable key={i} onPress={() => patch({ icon: i })} style={[styles.iconCell, { borderRadius: radii.md, backgroundColor: form.icon === i ? colors.primary : colors.surfaceAlt, borderColor: form.icon === i ? colors.primary : colors.line }]}>
-                <Icon name={i} size={20} color={form.icon === i ? colors.onPrimary : colors.ink} />
-              </Pressable>
-            ))}
-          </View>
-          <Text variant="bodySm" weight="semibold">
-            {t('ad.categories.form.color')}
-          </Text>
-          <View style={styles.wrap}>
-            {COLORS.map((c) => (
-              <Pressable key={c} onPress={() => patch({ color: c })} style={[styles.swatch, { backgroundColor: c, borderColor: form.color === c ? colors.ink : 'transparent' }]}>
-                {form.color === c ? <Icon name="check" size={16} color="#FFFFFF" /> : null}
+              <Pressable key={i} onPress={() => patch({ icon: i })} style={[styles.iconCell, { borderRadius: radii.md, backgroundColor: form.icon === i ? colors.tint : colors.surface, borderColor: form.icon === i ? colors.primary : colors.line, borderWidth: form.icon === i ? 1.5 : StyleSheet.hairlineWidth }]}>
+                <CategoryGlyph name={i} size={26} />
               </Pressable>
             ))}
           </View>
@@ -262,9 +255,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   imagePick: { height: 140, overflow: 'hidden', borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  preview: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  preview: { width: 104, paddingVertical: 12, paddingHorizontal: 8, gap: 6, alignItems: 'center', justifyContent: 'center' },
   imageLabel: { position: 'absolute', bottom: 10, end: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(42,0,15,0.7)', paddingHorizontal: 12, height: 30, borderRadius: 15 },
   iconCell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
   sub: { padding: 12, borderWidth: 1, gap: 10 },
 });

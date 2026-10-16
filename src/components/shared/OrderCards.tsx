@@ -6,7 +6,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { brand } from '@/theme/tokens';
 import type { Booking, BookingStatus, Gift, Subscription } from '@/domain/types';
 import { useI18n, daysUntil } from '@/i18n';
-import { Avatar, Button, Icon, ProgressBar, RingProgress, StatusPill, Tag, Text } from '@/components/ui';
+import { Avatar, Button, Icon, PremiumGlyph, ProgressBar, RingProgress, StatusPill, Tag, Text } from '@/components/ui';
 
 const STATUS_FLOW: BookingStatus[] = ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED'];
 
@@ -176,9 +176,7 @@ export const GiftCard = React.memo(function GiftCard({ gift, direction, onPress 
   return (
     <Pressable onPress={onPress ? () => onPress(gift) : undefined} style={({ pressed }) => [styles.card, { backgroundColor: colors.surface, borderRadius: radii.card, padding: spacing.lg, opacity: pressed ? 0.95 : 1 }, shadows.card]}>
       <View style={styles.companyRow}>
-        <View style={[styles.giftIcon, { backgroundColor: colors.goldTint }]}>
-          <Icon name={icon} size={22} color={colors.gold} />
-        </View>
+        <PremiumGlyph name={icon} size={42} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text variant="title" weight="semibold" lines={1}>
             {what}
@@ -218,5 +216,4 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 2 },
   decor: { position: 'absolute', top: -60, start: -40, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.06)' },
   subTop: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  giftIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
 });

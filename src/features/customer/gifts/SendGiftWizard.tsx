@@ -3,10 +3,10 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import { Avatar, Button, Card, Chip, Header, Icon, IconBubble, Input, NumberStepper, PhoneInput, Skeleton, StepDots, Text, TextArea, toast } from '@/components/ui';
+import { Avatar, Button, Card, Chip, Header, Icon, IconBubble, Input, NumberStepper, PhoneInput, PremiumGlyph, Skeleton, StepDots, Text, TextArea, toast } from '@/components/ui';
 import { CompanyListRow, ProductCard, ServiceRow } from '@/components/shared';
 import { repo } from '@/data';
-import { useCompanies, useCompany, useLoyalty, useProducts, useSendGift, useServices } from '@/data/hooks';
+import { useCategories, useCompanies, useCompany, useLoyalty, useProducts, useSendGift, useServices } from '@/data/hooks';
 import type { GiftKind, RecipientLookup } from '@/domain/types';
 import { useI18n } from '@/i18n';
 import { haptic } from '@/lib/haptics';
@@ -46,6 +46,8 @@ export const SendGiftWizard = () => {
 
   const companyData = useCompany(draft.companyId ?? undefined);
   const company = companyData.data ?? null;
+  const categories = useCategories();
+  const categoryIcon = categories.data?.find((c) => c.id === company?.categoryId)?.icon ?? null;
   const service = useMemo(() => services.data?.find((s) => s.id === draft.serviceId) ?? null, [services.data, draft.serviceId]);
   const product = useMemo(() => products.data?.find((p) => p.id === draft.productId) ?? null, [products.data, draft.productId]);
   const balance = loyalty.data?.points ?? 0;
@@ -161,7 +163,7 @@ export const SendGiftWizard = () => {
                   setStep(o.k === 'POINTS' ? 'amount' : 'item');
                 }}
                 style={({ pressed }) => [styles.option, { backgroundColor: draft.kind === o.k ? colors.tint : colors.surface, borderColor: draft.kind === o.k ? colors.primary : colors.line, borderRadius: radii.card, opacity: pressed ? 0.9 : 1 }, shadows.card]}>
-                <IconBubble name={o.icon} size={52} background={colors.goldTint} color={colors.gold} />
+                <PremiumGlyph name={o.icon} size={46} />
                 <View style={{ flex: 1 }}>
                   <Text variant="title" weight="bold">
                     {o.title}
@@ -179,7 +181,7 @@ export const SendGiftWizard = () => {
         return (
           <View style={{ gap: spacing.lg }}>
             <Card style={{ alignItems: 'center', gap: spacing.md }}>
-              <IconBubble name="coins" size={64} iconSize={30} background={colors.goldTint} color={colors.gold} />
+              <PremiumGlyph name="coins" size={64} />
               <NumberStepper value={draft.points} onChange={(v) => set({ points: v })} min={50} max={Math.max(50, balance)} step={50} suffix={t('common.points')} />
               <View style={styles.wrap}>
                 {[100, 200, 500].map((v) => (
@@ -252,7 +254,7 @@ export const SendGiftWizard = () => {
       case 'preview':
         return (
           <View style={{ gap: spacing.lg }}>
-            <GiftVoucher senderName={session?.name ?? ''} itemLabel={itemLabel} companyLabel={companyName || null} amountLabel={amount ? formatMoney(amount) : null} message={draft.message} kind={draft.kind ?? 'POINTS'} />
+            <GiftVoucher senderName={session?.name ?? ''} itemLabel={itemLabel} companyLabel={companyName || null} amountLabel={amount ? formatMoney(amount) : null} message={draft.message} kind={draft.kind ?? 'POINTS'} recipientName={draft.recipientName || `+974 ${draft.recipientPhone}`} categoryIcon={categoryIcon} />
             <Card style={[styles.option, { backgroundColor: lookup?.registered ? colors.successTint : colors.goldTint }]} shadow="none">
               <IconBubble name={lookup?.registered ? 'badge-check' : 'message-circle-more'} size={44} background="rgba(255,255,255,0.7)" color={lookup?.registered ? colors.success : colors.gold} />
               <View style={{ flex: 1 }}>
@@ -279,7 +281,7 @@ export const SendGiftWizard = () => {
       case 'success':
         return (
           <View style={{ gap: spacing.lg, alignItems: 'center' }}>
-            <IconBubble name="party-popper" size={96} iconSize={44} background={colors.successTint} color={colors.success} />
+            <PremiumGlyph name="party-popper" size={92} />
             <Text variant="h1" align="center">
               {lastResult?.whatsappUrl ? t('gifts.send.successWhatsapp') : t('gifts.send.success')}
             </Text>
@@ -287,7 +289,7 @@ export const SendGiftWizard = () => {
               {lastResult?.whatsappUrl ? t('gifts.send.successWhatsappBody') : t('gifts.send.successBody', { name: draft.recipientName || `+974 ${draft.recipientPhone}` })}
             </Text>
             <View style={{ width: '100%' }}>
-              <GiftVoucher senderName={session?.name ?? ''} itemLabel={itemLabel} companyLabel={companyName || null} amountLabel={amount ? formatMoney(amount) : null} message={draft.message} kind={draft.kind ?? 'POINTS'} code={lastResult?.gift.code} />
+              <GiftVoucher senderName={session?.name ?? ''} itemLabel={itemLabel} companyLabel={companyName || null} amountLabel={amount ? formatMoney(amount) : null} message={draft.message} kind={draft.kind ?? 'POINTS'} code={lastResult?.gift.code} recipientName={draft.recipientName || `+974 ${draft.recipientPhone}`} categoryIcon={categoryIcon} />
             </View>
             {lastResult?.whatsappUrl ? (
               <>

@@ -14,10 +14,9 @@ export interface CategoryTileProps {
   size?: 'md' | 'lg';
 }
 
-/** Link-1 category tile: white card, gradient duotone glyph, label. Selected variant is solid maroon ("الكل"). */
-export const CategoryTile = React.memo(function CategoryTile({ label, icon, color, onPress, selected, style, size = 'md' }: CategoryTileProps) {
+/** Category tile: white card, premium gradient glyph without any background, label. Selected variant is solid maroon ("الكل"). */
+export const CategoryTile = React.memo(function CategoryTile({ label, icon, onPress, selected, style, size = 'md' }: CategoryTileProps) {
   const { colors, radii, shadows } = useTheme();
-  const accent = color ?? colors.primary;
   return (
     <Pressable
       onPress={() => {
@@ -30,7 +29,7 @@ export const CategoryTile = React.memo(function CategoryTile({ label, icon, colo
         selected ? null : shadows.card,
         style,
       ]}>
-      <CategoryGlyph name={icon} color={accent} size={size === 'lg' ? 60 : 54} selected={selected} />
+      <CategoryGlyph name={icon} size={size === 'lg' ? 52 : 46} selected={selected} />
       <Text variant="bodySm" weight="semibold" align="center" color={selected ? '#FFFFFF' : colors.ink} lines={2}>
         {label}
       </Text>
