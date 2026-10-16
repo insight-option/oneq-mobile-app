@@ -1,68 +1,65 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
+import React, { useEffect, useRef, useState } from 'react';
+import { Dimensions, StyleSheet, Text as RNText, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SplashScreen, useRouter } from 'expo-router';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Text } from '@/components/ui';
 import { useI18n } from '@/i18n';
 import { appWidth } from '@/lib/layout';
 import { useSessionStore } from '@/store/session';
-import { brand } from '@/theme/tokens';
 
 /*
- * Launch sequence. Frame 0 is identical to the native splash (cream 1Q monogram, 160 pt, centred on #5A0020) so the
- * hand-off is invisible; then: the maroon deepens into a lit radial field → a gold comet draws one orbit around the
- * emblem while a soft halo breathes behind it → a sheen of light passes across the monogram → the emblem settles
- * upward and the wordmark, a gold hairline and the tagline rise in → gold dust drifts for the rest of the stay →
- * everything lifts and fades into the first screen.
+ * Launch sequence — the typographic "¹Q" mark from the brand film, refined:
+ *  0.0s  blank oxblood field, identical to the native splash (app.json), which deepens into a softly lit vignette
+ *  0.3s  an ivory Playfair "Q" comes into focus (fade + gentle de-zoom) with a warm bloom behind it
+ *  1.1s  a gold superscript "1" settles in at its upper left while the Q glides over to centre the pair
+ *  1.5s  a band of gold light passes through the Q (three nested windows give the band soft edges)
+ *  1.9s  a gold hairline draws, then the letter-spaced name and the tagline rise in
+ *  exit  the mark lifts and everything dissolves into the first screen
  */
 const W = appWidth();
 const H = Dimensions.get('window').height;
-const MIN_MS = 2300;
-const EMBLEM = 160; // native splash imageWidth (app.json)
-const ORBIT = 216;
-const STAGE = ORBIT * 1.5;
-const GOLD = '#E7BE73';
-const GOLD_SOFT = '#F6DFAE';
+const MIN_MS = 3000;
+const FIELD = '#371617'; // brand film background — also the native splash colour
+const IVORY = '#F1E1DA';
+const GOLD = '#E3B874';
+const GOLD_SHEEN = '#F0C77E';
+const QS = Math.round(Math.min(150, W * 0.36)); // Q font size
+const QW = Math.round(QS * 0.86); // Q box width
+const QH = Math.round(QS * 1.22);
+const ONE_W = Math.round(QS * 0.3);
+const GAP = -Math.round(QS * 0.03); // the Q's side bearing already separates the pair
+const SHIFT = (ONE_W + GAP) / 2; // how far the Q glides to centre the "¹Q" pair
+const MARK_W = ONE_W + GAP + QW;
+const GLOW = QS * 3;
 const ease = Easing.bezier(0.22, 1, 0.36, 1);
 
-/** Deterministic pseudo-random in [0, 1) so the dust field is identical on every launch. */
-const rand = (i: number, salt: number) => {
-  const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453;
-  return x - Math.floor(x);
-};
-
-const Dust = ({ index, play }: { index: number; play: boolean }) => {
-  const t = useSharedValue(0);
-  const left = rand(index, 1) * W;
-  const top = H * (0.16 + rand(index, 2) * 0.7);
-  const size = 1.6 + rand(index, 3) * 2.6;
-  const drift = 26 + rand(index, 4) * 46;
-  const duration = 3200 + rand(index, 5) * 2600;
-  useEffect(() => {
-    if (!play) return;
-    t.value = withDelay(500 + rand(index, 6) * 1400, withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, false));
-  }, [play, t, index, duration]);
-  const style = useAnimatedStyle(() => ({
-    opacity: Math.sin(t.value * Math.PI) * 0.85,
-    transform: [{ translateY: -t.value * drift }, { scale: 0.6 + Math.sin(t.value * Math.PI) * 0.6 }],
-  }));
-  return <Animated.View pointerEvents="none" style={[styles.dust, { left, top, width: size, height: size, borderRadius: size / 2 }, style]} />;
+/** One window of the moving gold band: the window travels right while its content counter-moves, so the gold Q stays put. */
+const SheenBand = ({ center, width, opacity }: { center: SharedValue<number>; width: number; opacity: number }) => {
+  const windowStyle = useAnimatedStyle(() => ({ transform: [{ translateX: center.value - width / 2 }] }));
+  const contentStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -(center.value - width / 2) }] }));
+  return (
+    <Animated.View style={[styles.band, { width, opacity }, windowStyle]}>
+      <Animated.View style={[styles.bandContent, contentStyle]}>
+        <RNText style={[styles.q, { color: GOLD_SHEEN }]}>Q</RNText>
+      </Animated.View>
+    </Animated.View>
+  );
 };
 
 const LoaderDot = ({ index, play }: { index: number; play: boolean }) => {
-  const v = useSharedValue(0.25);
+  const v = useSharedValue(0.2);
   useEffect(() => {
     if (!play) return;
-    v.value = withDelay(1500 + index * 180, withRepeat(withSequence(withTiming(1, { duration: 520, easing: Easing.inOut(Easing.quad) }), withTiming(0.25, { duration: 520, easing: Easing.inOut(Easing.quad) })), -1, false));
+    v.value = withDelay(2400 + index * 180, withRepeat(withSequence(withTiming(0.9, { duration: 560, easing: Easing.inOut(Easing.quad) }), withTiming(0.2, { duration: 560, easing: Easing.inOut(Easing.quad) })), -1, false));
   }, [play, v, index]);
-  const style = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ scale: 0.75 + v.value * 0.35 }] }));
+  const style = useAnimatedStyle(() => ({ opacity: v.value }));
   return <Animated.View style={[styles.loaderDot, style]} />;
 };
 
-const useFadeRise = (value: SharedValue<number>, distance: number) => useAnimatedStyle(() => ({ opacity: value.value, transform: [{ translateY: (1 - value.value) * distance }] }));
+const useFadeRise = (value: SharedValue<number>, distance: number, exit: SharedValue<number>) =>
+  useAnimatedStyle(() => ({ opacity: value.value * (1 - exit.value), transform: [{ translateY: (1 - value.value) * distance - exit.value * 8 }] }));
 
 export const BootScreen = () => {
   const router = useRouter();
@@ -75,14 +72,14 @@ export const BootScreen = () => {
   const [minElapsed, setMinElapsed] = useState(false);
   const navigated = useRef(false);
 
-  const field = useSharedValue(0); // lit radial field over the flat splash maroon
-  const orbit = useSharedValue(0); // comet sweep, one turn
-  const orbitIn = useSharedValue(0);
-  const halo = useSharedValue(0);
-  const sheen = useSharedValue(0);
-  const settle = useSharedValue(0); // emblem rises and scales down to make room for the text
-  const word = useSharedValue(0);
+  const field = useSharedValue(0);
+  const q = useSharedValue(0);
+  const glow = useSharedValue(0);
+  const shift = useSharedValue(1); // 1 = Q alone in the centre, 0 = "¹Q" pair centred
+  const one = useSharedValue(0);
+  const sheen = useSharedValue(-QW * 0.5);
   const rule = useSharedValue(0);
+  const name = useSharedValue(0);
   const tagline = useSharedValue(0);
   const footer = useSharedValue(0);
   const exit = useSharedValue(0);
@@ -90,131 +87,101 @@ export const BootScreen = () => {
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => undefined);
     if (reduceMotion) {
-      [field, orbit, orbitIn, halo, settle, word, rule, tagline, footer].forEach((v) => (v.value = withTiming(1, { duration: 300 })));
+      [field, q, glow, one, rule, name, tagline, footer].forEach((v) => (v.value = withTiming(1, { duration: 300 })));
+      shift.value = 0;
     } else {
-      field.value = withTiming(1, { duration: 900, easing: ease });
-      orbitIn.value = withDelay(150, withTiming(1, { duration: 700, easing: ease }));
-      orbit.value = withDelay(150, withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.cubic) }));
-      halo.value = withDelay(200, withRepeat(withSequence(withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.sin) }), withTiming(0.55, { duration: 1400, easing: Easing.inOut(Easing.sin) })), -1, false));
-      sheen.value = withDelay(650, withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.cubic) }));
-      settle.value = withDelay(700, withTiming(1, { duration: 900, easing: ease }));
-      word.value = withDelay(1000, withTiming(1, { duration: 800, easing: ease }));
-      rule.value = withDelay(1250, withTiming(1, { duration: 700, easing: ease }));
-      tagline.value = withDelay(1400, withTiming(1, { duration: 750, easing: ease }));
-      footer.value = withDelay(1700, withTiming(1, { duration: 600, easing: ease }));
+      field.value = withTiming(1, { duration: 800, easing: ease });
+      q.value = withDelay(300, withTiming(1, { duration: 950, easing: ease }));
+      glow.value = withDelay(400, withSequence(withTiming(1, { duration: 1200, easing: ease }), withRepeat(withSequence(withTiming(0.6, { duration: 1600, easing: Easing.inOut(Easing.sin) }), withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.sin) })), -1, false)));
+      shift.value = withDelay(1100, withTiming(0, { duration: 750, easing: ease }));
+      one.value = withDelay(1150, withTiming(1, { duration: 800, easing: ease }));
+      sheen.value = withDelay(1500, withTiming(QW * 1.5, { duration: 1050, easing: Easing.inOut(Easing.cubic) }));
+      rule.value = withDelay(1900, withTiming(1, { duration: 650, easing: ease }));
+      name.value = withDelay(2050, withTiming(1, { duration: 650, easing: ease }));
+      tagline.value = withDelay(2250, withTiming(1, { duration: 650, easing: ease }));
+      footer.value = withDelay(2400, withTiming(1, { duration: 600, easing: ease }));
     }
     const timer = setTimeout(() => setMinElapsed(true), reduceMotion ? 900 : MIN_MS);
     return () => clearTimeout(timer);
-  }, [reduceMotion, field, orbit, orbitIn, halo, sheen, settle, word, rule, tagline, footer]);
+  }, [reduceMotion, field, q, glow, shift, one, sheen, rule, name, tagline, footer]);
 
   useEffect(() => {
     if (status !== 'ready' || !minElapsed || navigated.current) return;
     navigated.current = true;
-    exit.value = withTiming(1, { duration: 380, easing: Easing.in(Easing.cubic) });
+    exit.value = withTiming(1, { duration: 450, easing: Easing.in(Easing.cubic) });
     const target = !onboarded ? '/onboarding' : session ? landingRoute() : '/(auth)/welcome';
-    const id = setTimeout(() => router.replace(target as never), 400);
+    const id = setTimeout(() => router.replace(target as never), 470);
     return () => clearTimeout(id);
   }, [status, minElapsed, onboarded, session, landingRoute, router, exit]);
 
   const fieldStyle = useAnimatedStyle(() => ({ opacity: field.value }));
-  const haloStyle = useAnimatedStyle(() => ({ opacity: halo.value * 0.9 * (1 - exit.value), transform: [{ scale: 0.9 + halo.value * 0.14 }] }));
-  const orbitStyle = useAnimatedStyle(() => ({ opacity: orbitIn.value * (1 - orbit.value * 0.65) * (1 - exit.value), transform: [{ rotate: `${-90 + orbit.value * 360}deg` }, { scale: 0.94 + orbitIn.value * 0.06 }] }));
-  const ringStyle = useAnimatedStyle(() => ({ opacity: orbit.value * 0.6 * (1 - exit.value) }));
-  const emblemStyle = useAnimatedStyle(() => ({ opacity: 1 - exit.value, transform: [{ translateY: -settle.value * 44 }, { scale: 1 - settle.value * 0.2 + exit.value * 0.06 }] }));
-  const sheenStyle = useAnimatedStyle(() => ({ opacity: sheen.value > 0 && sheen.value < 1 ? 1 : 0, transform: [{ translateX: -EMBLEM + sheen.value * EMBLEM * 2 }, { rotate: '20deg' }] }));
-  const wordStyle = useFadeRise(word, 16);
-  const ruleStyle = useAnimatedStyle(() => ({ width: 72 * rule.value, opacity: rule.value }));
-  const taglineStyle = useFadeRise(tagline, 12);
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value * 0.9 * (1 - exit.value), transform: [{ scale: 0.85 + glow.value * 0.15 }] }));
+  const markStyle = useAnimatedStyle(() => ({ opacity: 1 - exit.value, transform: [{ translateX: -SHIFT * shift.value }, { scale: 1 + exit.value * 0.05 }] }));
+  const qStyle = useAnimatedStyle(() => ({ opacity: q.value, transform: [{ translateY: (1 - q.value) * 8 }, { scale: 1.08 - q.value * 0.08 }] }));
+  const oneStyle = useAnimatedStyle(() => ({ opacity: one.value, transform: [{ translateY: -(1 - one.value) * QS * 0.14 }] }));
+  const ruleStyle = useAnimatedStyle(() => ({ width: 58 * rule.value, opacity: rule.value * (1 - exit.value) }));
+  const nameStyle = useFadeRise(name, 10, exit);
+  const taglineStyle = useFadeRise(tagline, 10, exit);
   const footerStyle = useAnimatedStyle(() => ({ opacity: footer.value * (1 - exit.value) }));
-  const textBlockStyle = useAnimatedStyle(() => ({ opacity: 1 - exit.value, transform: [{ translateY: -exit.value * 10 }] }));
-
-  const dust = useMemo(() => Array.from({ length: 16 }, (_, i) => i), []);
 
   return (
     <View style={styles.root}>
+      {/* softly lit vignette over the flat splash colour */}
       <Animated.View style={[StyleSheet.absoluteFill, fieldStyle]} pointerEvents="none">
         <Svg width={W} height={H}>
           <Defs>
-            <RadialGradient id="bootField" cx="50%" cy="44%" rx="78%" ry="58%">
-              <Stop offset="0" stopColor="#8A2448" />
-              <Stop offset="0.45" stopColor={brand.maroon} />
-              <Stop offset="1" stopColor="#1C000A" />
+            <RadialGradient id="bootField" cx="50%" cy="42%" rx="80%" ry="60%">
+              <Stop offset="0" stopColor="#4D1F20" />
+              <Stop offset="0.5" stopColor={FIELD} />
+              <Stop offset="1" stopColor="#1B0909" />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width={W} height={H} fill="url(#bootField)" />
         </Svg>
       </Animated.View>
 
-      {dust.map((i) => (
-        <Dust key={i} index={i} play={!reduceMotion} />
-      ))}
-
       <View style={styles.center} pointerEvents="none">
-        <Animated.View style={[styles.stage, emblemStyle]}>
-          {/* breathing gold halo behind the emblem */}
-          <Animated.View style={[styles.layer, haloStyle]}>
-            <Svg width={STAGE} height={STAGE}>
+        <View style={styles.markArea}>
+          {/* warm bloom behind the mark */}
+          <Animated.View style={[styles.glow, glowStyle]}>
+            <Svg width={GLOW} height={GLOW}>
               <Defs>
-                <RadialGradient id="bootHalo" cx="50%" cy="50%" rx="50%" ry="50%">
-                  <Stop offset="0" stopColor={GOLD} stopOpacity="0.32" />
-                  <Stop offset="0.55" stopColor={GOLD} stopOpacity="0.08" />
+                <RadialGradient id="bootGlow" cx="50%" cy="50%" rx="50%" ry="50%">
+                  <Stop offset="0" stopColor={GOLD} stopOpacity="0.22" />
+                  <Stop offset="0.5" stopColor={GOLD} stopOpacity="0.06" />
                   <Stop offset="1" stopColor={GOLD} stopOpacity="0" />
                 </RadialGradient>
               </Defs>
-              <Circle cx={STAGE / 2} cy={STAGE / 2} r={STAGE / 2} fill="url(#bootHalo)" />
+              <Circle cx={GLOW / 2} cy={GLOW / 2} r={GLOW / 2} fill="url(#bootGlow)" />
             </Svg>
           </Animated.View>
 
-          {/* fine ring that remains once the comet has passed */}
-          <Animated.View style={[styles.layer, ringStyle]}>
-            <Svg width={ORBIT} height={ORBIT}>
-              <Circle cx={ORBIT / 2} cy={ORBIT / 2} r={ORBIT / 2 - 2} stroke={GOLD_SOFT} strokeOpacity={0.45} strokeWidth={0.8} fill="none" />
-            </Svg>
+          {/* the "¹Q" mark — laid out left-to-right in every language */}
+          <Animated.View style={[styles.mark, markStyle]}>
+            <Animated.View style={[styles.oneWrap, oneStyle]}>
+              <RNText style={styles.one}>1</RNText>
+            </Animated.View>
+            <Animated.View style={[styles.qBox, qStyle]}>
+              <RNText style={styles.q}>Q</RNText>
+              <SheenBand center={sheen} width={QW * 0.62} opacity={0.3} />
+              <SheenBand center={sheen} width={QW * 0.36} opacity={0.55} />
+              <SheenBand center={sheen} width={QW * 0.14} opacity={0.95} />
+            </Animated.View>
           </Animated.View>
+        </View>
 
-          {/* comet: a gold arc fading along its length with a bright head, rotated once around the emblem */}
-          <Animated.View style={[styles.layer, orbitStyle]}>
-            <Svg width={ORBIT} height={ORBIT}>
-              <Defs>
-                <SvgLinearGradient id="bootComet" x1="0%" y1="100%" x2="100%" y2="50%">
-                  <Stop offset="0" stopColor={GOLD} stopOpacity="0" />
-                  <Stop offset="1" stopColor={GOLD_SOFT} stopOpacity="1" />
-                </SvgLinearGradient>
-              </Defs>
-              <Circle cx={ORBIT / 2} cy={ORBIT / 2} r={ORBIT / 2 - 2} stroke="url(#bootComet)" strokeWidth={1.6} strokeLinecap="round" fill="none" strokeDasharray={`${Math.PI * (ORBIT - 4) * 0.3} ${Math.PI * (ORBIT - 4)}`} />
-              <Circle cx={ORBIT - 2} cy={ORBIT / 2} r={2.6} fill={GOLD_SOFT} />
-            </Svg>
-          </Animated.View>
-
-          {/* the monogram exactly as on the native splash, with a light sheen passing across it */}
-          <View style={styles.emblem}>
-            <Image source={require('../../../assets/splash-icon.png')} style={styles.emblemImage} contentFit="contain" />
-            <View style={styles.sheenClip}>
-              <Animated.View style={[styles.sheen, sheenStyle]}>
-                <LinearGradient colors={['rgba(255,240,210,0)', 'rgba(255,240,210,0.28)', 'rgba(255,240,210,0)']} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
-              </Animated.View>
-            </View>
-          </View>
-        </Animated.View>
-      </View>
-
-      {/* placed under the screen centre so the emblem starts exactly where the native splash drew it */}
-      <Animated.View style={[styles.textBlock, textBlockStyle]} pointerEvents="none">
-        <Animated.View style={wordStyle}>
-          <Image source={require('../../../assets/brand/wordmark-cream.png')} style={styles.wordmark} contentFit="contain" />
-        </Animated.View>
         <Animated.View style={[styles.rule, ruleStyle]}>
-          <LinearGradient colors={['rgba(231,190,115,0)', GOLD, 'rgba(231,190,115,0)']} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(227,184,116,0)', GOLD, 'rgba(227,184,116,0)']} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
+        </Animated.View>
+        <Animated.View style={nameStyle}>
+          <RNText style={styles.name}>ONEQ</RNText>
         </Animated.View>
         <Animated.View style={[styles.taglineWrap, taglineStyle]}>
-          <Text variant="h3" color={brand.cream} align="center" style={styles.tagline}>
+          <Text variant="bodySm" color="rgba(241,225,218,0.68)" align="center">
             {t('splash.tagline')}
           </Text>
-          <Text variant="bodySm" color="rgba(247,240,234,0.66)" align="center">
-            {t('splash.subtitle')}
-          </Text>
         </Animated.View>
-      </Animated.View>
+      </View>
 
       <Animated.View style={[styles.bottom, footerStyle]} pointerEvents="none">
         <View style={styles.loader} accessibilityLabel={t('splash.loading')}>
@@ -222,7 +189,7 @@ export const BootScreen = () => {
             <LoaderDot key={i} index={i} play={!reduceMotion} />
           ))}
         </View>
-        <Text variant="caption" numeric color="rgba(247,240,234,0.42)" align="center">
+        <Text variant="caption" numeric color="rgba(241,225,218,0.34)" align="center">
           {t('splash.footer')}
         </Text>
       </Animated.View>
@@ -231,21 +198,21 @@ export const BootScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: brand.maroon, overflow: 'hidden' },
-  center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  stage: { width: STAGE, height: STAGE, alignItems: 'center', justifyContent: 'center' },
-  layer: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
-  emblem: { width: EMBLEM, height: EMBLEM, alignItems: 'center', justifyContent: 'center' },
-  emblemImage: { width: EMBLEM, height: EMBLEM },
-  sheenClip: { ...StyleSheet.absoluteFill, borderRadius: EMBLEM / 2, overflow: 'hidden' },
-  sheen: { position: 'absolute', top: -EMBLEM * 0.25, bottom: -EMBLEM * 0.25, width: EMBLEM * 0.42, left: EMBLEM / 2 - EMBLEM * 0.21 },
-  textBlock: { position: 'absolute', left: 0, right: 0, top: '50%', marginTop: 60, alignItems: 'center', gap: 12, paddingHorizontal: 32 },
-  wordmark: { width: 150, height: 46 },
-  rule: { height: 1, overflow: 'hidden' },
-  taglineWrap: { alignItems: 'center', gap: 6 },
-  tagline: { letterSpacing: 0.5 },
-  dust: { position: 'absolute', backgroundColor: GOLD_SOFT, shadowColor: GOLD, shadowOpacity: 0.9, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 38, gap: 18 },
-  loader: { flexDirection: 'row', gap: 8, height: 10, alignItems: 'center' },
-  loaderDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: GOLD },
+  root: { flex: 1, backgroundColor: FIELD, overflow: 'hidden' },
+  center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', paddingBottom: H * 0.06 },
+  markArea: { width: MARK_W, height: QH, direction: 'ltr' },
+  glow: { position: 'absolute', left: (MARK_W - GLOW) / 2 + SHIFT, top: (QH - GLOW) / 2 },
+  mark: { flexDirection: 'row', direction: 'ltr', alignItems: 'flex-start' },
+  oneWrap: { width: ONE_W, marginRight: GAP, marginTop: -QS * 0.06, alignItems: 'flex-end' },
+  one: { fontFamily: 'PlayfairDisplay-Regular', fontSize: Math.round(QS * 0.42), lineHeight: Math.round(QS * 0.56), color: GOLD, includeFontPadding: false },
+  qBox: { width: QW, height: QH, overflow: 'hidden' },
+  q: { width: QW, fontFamily: 'PlayfairDisplay-Regular', fontSize: QS, lineHeight: QH, color: IVORY, textAlign: 'center', includeFontPadding: false },
+  band: { position: 'absolute', top: 0, bottom: 0, left: 0, overflow: 'hidden' },
+  bandContent: { position: 'absolute', top: 0, left: 0, width: QW, height: QH },
+  rule: { height: 1, marginTop: 6, overflow: 'hidden' },
+  name: { marginTop: 14, fontFamily: 'Outfit-Medium', fontSize: 12, letterSpacing: 7, color: 'rgba(241,225,218,0.78)', paddingStart: 7 },
+  taglineWrap: { marginTop: 10, paddingHorizontal: 32 },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingBottom: 38, gap: 16 },
+  loader: { flexDirection: 'row', gap: 8, height: 8, alignItems: 'center' },
+  loaderDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: GOLD },
 });

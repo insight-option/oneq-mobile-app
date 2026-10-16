@@ -19,10 +19,14 @@ const RUNTIME_FONTS: Record<string, number> = NEEDS_RUNTIME_FONTS
       'Outfit-Medium': require('../../assets/fonts/Outfit-Medium.ttf'),
       'Outfit-SemiBold': require('../../assets/fonts/Outfit-SemiBold.ttf'),
       'Outfit-Bold': require('../../assets/fonts/Outfit-Bold.ttf'),
+      'PlayfairDisplay-Regular': require('../../assets/fonts/PlayfairDisplay-Regular.ttf'),
       'PlayfairDisplay-SemiBold': require('../../assets/fonts/PlayfairDisplay-SemiBold.ttf'),
       'PlayfairDisplay-Bold': require('../../assets/fonts/PlayfairDisplay-Bold.ttf'),
     }
-  : {};
+  : {
+      // added after the first native builds: binaries built before it embedded the file still get it at runtime
+      'PlayfairDisplay-Regular': require('../../assets/fonts/PlayfairDisplay-Regular.ttf'),
+    };
 
 /** Returns true once the runtime-loaded fonts are available (always true in native builds). */
 export const useWebFonts = (): boolean => {

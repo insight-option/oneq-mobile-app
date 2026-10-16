@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#5A0020",
+    "backgroundColor": "#371617",
     "newArchEnabled": true,
     "updates": {
       "url": "https://u.expo.dev/d5503d5b-5dca-458b-9b21-72b2e99c2b54"
@@ -49,7 +49,7 @@
       "output": "single",
       "lang": "ar",
       "themeColor": "#5A0020",
-      "backgroundColor": "#5A0020",
+      "backgroundColor": "#371617",
       "description": "OneQ — منصة الخدمات الأولى في قطر"
     },
     "experiments": {
@@ -67,8 +67,8 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#5A0020",
-          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#371617",
+          "image": "./assets/splash-blank.png",
           "imageWidth": 160,
           "resizeMode": "contain"
         }
@@ -85,6 +85,7 @@
             "./assets/fonts/Outfit-Medium.ttf",
             "./assets/fonts/Outfit-SemiBold.ttf",
             "./assets/fonts/Outfit-Bold.ttf",
+            "./assets/fonts/PlayfairDisplay-Regular.ttf",
             "./assets/fonts/PlayfairDisplay-SemiBold.ttf",
             "./assets/fonts/PlayfairDisplay-Bold.ttf"
           ]

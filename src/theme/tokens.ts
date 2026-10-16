@@ -219,6 +219,7 @@ export const fonts = {
     bold: 'Outfit-Bold',
   },
   display: {
+    regular: 'PlayfairDisplay-Regular',
     semibold: 'PlayfairDisplay-SemiBold',
     bold: 'PlayfairDisplay-Bold',
   },

@@ -4,23 +4,23 @@ import Svg, { Defs, G, LinearGradient, Path, Stop } from 'react-native-svg';
 import { glyphShape, hasGlyphShape } from './glyphPaths';
 
 /**
- * Premium glyphs: two-layer (duotone) artwork drawn with gradient fills and NO background tile — a deep maroon
- * gradient for the outline and a champagne-gold gradient for the inner layer. Category / subcategory records keep their
- * lucide-style icon names (admin picker, seed data); glyphPaths.ts maps them to the artwork.
+ * Premium glyphs: fine-line artwork (rounded strokes, like an engraved jeweller's mark) with NO background tile — a
+ * warm oxblood-to-cocoa gradient line over a faint champagne wash inside the shape. Category / subcategory records keep
+ * their lucide-style icon names (admin picker, seed data); glyphPaths.ts maps them to the artwork.
  */
 export const hasPremiumGlyph = hasGlyphShape;
 
 /**
- * brand: maroon outline + champagne-gold layer, for light surfaces (default)
- * light: ivory outline + warm-gold layer, for maroon surfaces (selected tile, gift card)
- * gold:  gold outline + ivory layer, for accents on maroon
+ * brand: oxblood line + champagne wash, for light surfaces (default)
+ * light: ivory line + warm-gold wash, for maroon surfaces (selected tile, gift card)
+ * gold:  gold line + ivory wash, for accents on maroon
  */
 export type GlyphTone = 'brand' | 'light' | 'gold';
 
 const TONES: Record<GlyphTone, { main: [string, string]; layer: [string, string]; layerOpacity: number }> = {
-  brand: { main: ['#9A2549', '#4A0019'], layer: ['#F6DFB0', '#D6A256'], layerOpacity: 0.95 },
-  light: { main: ['#FFFFFF', '#F2E2CC'], layer: ['#F8D894', '#C88A36'], layerOpacity: 0.9 },
-  gold: { main: ['#FBE3AE', '#C8893A'], layer: ['#FFFFFF', '#F6E7D2'], layerOpacity: 0.35 },
+  brand: { main: ['#7E2F27', '#3A1211'], layer: ['#F4DDB4', '#D8A964'], layerOpacity: 0.34 },
+  light: { main: ['#FFF9F2', '#EBD7BE'], layer: ['#FCE6B8', '#E7B96E'], layerOpacity: 0.2 },
+  gold: { main: ['#F7DDA6', '#C8893A'], layer: ['#FFFFFF', '#F6E7D2'], layerOpacity: 0.25 },
 };
 
 export interface PremiumGlyphProps {
