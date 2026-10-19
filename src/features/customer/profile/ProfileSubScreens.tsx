@@ -240,38 +240,4 @@ export const HelpScreen = () => {
 };
 
 /* ---------- Privacy ---------- */
-export const PrivacyScreen = () => {
-  const { t } = useI18n();
-  const lang = useLocaleStore((s) => s.lang);
-  const { colors, spacing } = useTheme();
-  const paragraphs =
-    lang === 'ar'
-      ? [
-          'نلتزم في OneQ بحماية خصوصيتك. نجمع رقم جوالك وبريدك الإلكتروني واسمك لإنشاء حسابك وتأكيد حجوزاتك وإرسال الهدايا.',
-          'نستخدم موقعك فقط لعرض أقرب الشركات إليك، ولا نشاركه مع أي طرف ثالث.',
-          'تُشارك بيانات الحجز (الاسم، رقم الجوال، العنوان للخدمات المنزلية) مع الشركة التي تحجز لديها لتنفيذ الخدمة.',
-          'يمكنك طلب حذف حسابك وبياناتك في أي وقت عبر مركز المساعدة.',
-        ]
-      : [
-          'OneQ is committed to protecting your privacy. We collect your phone number, email and name to create your account, confirm bookings and send gifts.',
-          'Your location is used only to show the nearest companies and is never shared with third parties.',
-          'Booking data (name, phone, address for home services) is shared with the company you book with to deliver the service.',
-          'You can request deletion of your account and data at any time through the help center.',
-        ];
-  return (
-    <Screen edges={[]} background={colors.canvas}>
-      <Header title={t('profile.privacy.title')} variant="maroon" compact />
-      <View style={{ padding: spacing.gutter, gap: spacing.md }}>
-        <Card style={{ gap: spacing.md }}>
-          {paragraphs.map((p, i) => (
-            <Text key={i} variant="body">
-              {p}
-            </Text>
-          ))}
-        </Card>
-      </View>
-    </Screen>
-  );
-};
-
 const styles = StyleSheet.create({ row: { flexDirection: 'row', alignItems: 'center', gap: 12 } });

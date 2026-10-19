@@ -25,6 +25,8 @@ frontend:
     build:
       commands:
         - npx expo export --platform web --output-dir dist
+        # real files for the public pages (oneq.qa/privacy, oneq.qa/terms) so they load without the SPA rewrite rule
+        - node scripts/web-static-routes.mjs dist
   artifacts:
     baseDirectory: dist
     files:

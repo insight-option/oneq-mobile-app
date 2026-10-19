@@ -99,6 +99,17 @@ export const PhoneScreen = () => {
         </View>
         <PhoneInput value={digits} onChange={setDigits} error={error} autoFocus onSubmit={submit} />
         <Button label={t('auth.phone.send')} size="lg" fullWidth loading={loading} onPress={submit} />
+        {/* SMS consent shown at the point of opt-in (declared in the sender-ID registration) */}
+        <Text variant="caption" color={colors.faint} align="center" style={{ marginTop: -spacing.sm }}>
+          {t('auth.phone.consent')}{' '}
+          <Text variant="caption" weight="semibold" color={colors.primary} onPress={() => router.push('/terms' as never)}>
+            {t('legal.terms')}
+          </Text>{' '}
+          {t('auth.legalAnd')}{' '}
+          <Text variant="caption" weight="semibold" color={colors.primary} onPress={() => router.push('/privacy' as never)}>
+            {t('legal.privacy')}
+          </Text>
+        </Text>
         <OrDivider label={t('common.or')} />
         <Button label={t('auth.phone.emailAlt')} variant="outline" size="lg" fullWidth leftIcon="mail" onPress={() => router.replace('/(auth)/email')} />
         <Pressable
@@ -303,7 +314,14 @@ export const EmailScreen = () => {
           </Text>
         </Pressable>
         <Text variant="caption" color={colors.faint} align="center" style={{ marginTop: spacing.sm }}>
-          {t('auth.legal')}
+          {t('auth.legalPrefix')}{' '}
+          <Text variant="caption" weight="semibold" color={colors.primary} onPress={() => router.push('/terms' as never)}>
+            {t('legal.terms')}
+          </Text>{' '}
+          {t('auth.legalAnd')}{' '}
+          <Text variant="caption" weight="semibold" color={colors.primary} onPress={() => router.push('/privacy' as never)}>
+            {t('legal.privacy')}
+          </Text>
         </Text>
       </View>
     </Screen>

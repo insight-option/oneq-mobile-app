@@ -99,3 +99,11 @@ cfnUserPool.adminCreateUserConfig = {
 };
 // owners often open the invitation days later; the Cognito default (7 days) left them with an expired temporary password
 cfnUserPool.addPropertyOverride('Policies.PasswordPolicy.TemporaryPasswordValidityDays', 30);
+
+/*
+ * SMS one-time code for sign-in (choice-based SMS_OTP first factor). Without this Cognito sends its English default
+ * ("Your authentication code is …"); the sign-up code uses `verificationMessage` in auth/resource.ts. Both texts are
+ * the samples declared in the Qatar sender-ID registration — keep the three in sync. Kept under 70 characters so a
+ * message with Arabic (UCS-2 encoding) still fits one SMS segment.
+ */
+cfnUserPool.smsAuthenticationMessage = 'OneQ: {####} رمز الدخول · sign-in code. Valid 3 min. Do not share.';

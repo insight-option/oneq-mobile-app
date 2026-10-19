@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, Text as RNText, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SplashScreen, useRouter } from 'expo-router';
+import { SplashScreen, usePathname, useRouter } from 'expo-router';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withRepeat, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Text } from '@/components/ui';
@@ -63,6 +63,7 @@ const useFadeRise = (value: SharedValue<number>, distance: number, exit: SharedV
 
 export const BootScreen = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const status = useSessionStore((s) => s.status);
@@ -106,13 +107,16 @@ export const BootScreen = () => {
   }, [reduceMotion, field, q, glow, shift, one, sheen, rule, name, tagline, footer]);
 
   useEffect(() => {
+    // The root stack anchors this screen under every deep link (oneq.qa/privacy, notification routes…): only redirect
+    // while it is the screen actually shown, otherwise it would replace the page that was opened.
+    if (pathname !== '/') return;
     if (status !== 'ready' || !minElapsed || navigated.current) return;
     navigated.current = true;
     exit.value = withTiming(1, { duration: 450, easing: Easing.in(Easing.cubic) });
     const target = !onboarded ? '/onboarding' : session ? landingRoute() : '/(auth)/welcome';
     const id = setTimeout(() => router.replace(target as never), 470);
     return () => clearTimeout(id);
-  }, [status, minElapsed, onboarded, session, landingRoute, router, exit]);
+  }, [pathname, status, minElapsed, onboarded, session, landingRoute, router, exit]);
 
   const fieldStyle = useAnimatedStyle(() => ({ opacity: field.value }));
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value * 0.9 * (1 - exit.value), transform: [{ scale: 0.85 + glow.value * 0.15 }] }));

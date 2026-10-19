@@ -36,7 +36,8 @@ export const ProfileScreen = () => {
     { icon: 'languages', label: t('profile.menu.language'), route: '/(customer)/language' },
     { icon: 'settings', label: t('profile.menu.settings'), route: '/(customer)/settings' },
     { icon: 'circle-help', label: t('profile.menu.help'), route: '/(customer)/help' },
-    { icon: 'shield-check', label: t('profile.menu.privacy'), route: '/(customer)/privacy' },
+    { icon: 'shield-check', label: t('profile.menu.privacy'), route: '/privacy' },
+    { icon: 'file-text', label: t('profile.menu.terms'), route: '/terms' },
   ];
 
   const signOut = async () => {

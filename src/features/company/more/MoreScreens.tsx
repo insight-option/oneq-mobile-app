@@ -33,6 +33,8 @@ export const MoreScreen = () => {
     { icon: 'chart-line', label: t('cw.more.analytics'), route: '/(company)/analytics' },
     { icon: 'bell', label: t('cw.more.notifications'), route: '/(company)/notifications' },
     { icon: 'languages', label: t('cw.more.language'), route: '/(company)/language' },
+    { icon: 'shield-check', label: t('profile.menu.privacy'), route: '/privacy' },
+    { icon: 'file-text', label: t('profile.menu.terms'), route: '/terms' },
   ];
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>

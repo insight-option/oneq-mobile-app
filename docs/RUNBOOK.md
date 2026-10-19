@@ -155,6 +155,11 @@ The GitHub repo `insight-option/oneq-mobile-app` is connected to the Amplify app
   single-page app, the hosting app needs one rewrite rule (Amplify console → Hosting → Rewrites and redirects):
   source `</^[^.]+$|\.(?!(css|gif|ico|jpg|jpeg|js|json|png|svg|txt|ttf|woff|woff2|map|webp)$)([^.]+$)/>`,
   target `/index.html`, type `200 (Rewrite)` — otherwise deep links such as `/company/<id>` return 404 on reload.
+- **Public legal pages**: `https://oneq.qa/privacy` and `https://oneq.qa/terms` (`?lang=en` for English; content in
+  `src/features/legal/content.ts`, contact e-mail and date at the top). They work even without the rewrite rule:
+  `scripts/web-static-routes.mjs` (run after the export in `amplify.yml`) writes `privacy/index.html` and
+  `terms/index.html`, and the hosting serves `/privacy` → `/privacy/`. Use these URLs wherever AWS (SNS SMS / SES
+  production access) or the app stores ask for a privacy policy or terms URL.
 
 ### 3.5 Web build notes
 
